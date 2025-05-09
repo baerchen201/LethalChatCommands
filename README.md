@@ -8,6 +8,25 @@ Simply run `dotnet package add baer1.ChatCommandAPI` or add the following line t
 <PackageReference Include="baer1.ChatCommandAPI" Version="0.*"/>
 ```
 
+Additionally, you should reference this mod in both your main plugin class and your manifest.json \(replace `<VERSION>` with the actual version you are using\):
+
+```csharp
+...
+[BepInPlugin(MyPluginInfo.PLUGIN_GUID, MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
+[BepInDependency("baer1.ChatCommandAPI", BepInDependency.DependencyFlags.HardDependency)]
+public class ExampleMod : BaseUnityPlugin
+...
+```
+```json
+...
+"dependencies": [
+"BepInEx-BepInExPack-5.4.2100",
+"baer1-ChatCommandAPI-<VERSION>",
+...
+]
+...
+```
+
 ### 2. Create Command Subclass
 
 Simply create a non-static class that inherits the `ChatCommandAPI.Command` class.
@@ -97,4 +116,75 @@ The above results in the following being displayed on the help list:
 Example - Prints Hello World [amount] times
 /MyCommand
 /MyCommand [amount]
+```
+
+### Using ToggleCommand
+
+If you are creating a command that is supposed to act as a toggle (on or off), you can use the `ToggleCommand` class to make this easier.
+
+You can override the `Value` property to access it externally or in harmony patches:
+
+```csharp
+using GameNetcodeStuff;
+using HarmonyLib;
+using ChatCommandAPI;
+
+namespace ExampleMod;
+
+public class ExampleToggleCommand : ToggleCommand
+{
+    public override string Name => "BlockJump"; // Command name
+    public override string ToggleDescription => "Blocks jump inputs"; // Use ToggleDescription instead of Description
+    public override string EnabledString => "blocked"; // String to use when Value=false
+    public override string DisabledString => "unblocked"; // String to use when Value=true
+
+    public override void PrintValue() => ChatCommandAPI.Print($"Jump inputs {ValueString}"); // Called after value is updated, for user feedback
+
+    public override bool Value // Redirect reads and writes to static property
+    {
+        get => BlockJump;
+        set => BlockJump = value;
+    }
+    public static bool BlockJump { get; internal set; } // Static property for external access
+
+    [HarmonyPatch(typeof(PlayerControllerB), nameof(PlayerControllerB.Jump_performed))]
+    internal class Patch
+    {
+        private static bool Prefix() => !BlockJump; // Block jump
+    }
+}
+```
+
+### Player arguments
+
+If you want to allow a player name as an argument, you should use the `Utils.GetPlayer` function:
+
+```csharp
+using System.Collections.Generic;
+using ChatCommandAPI;
+using GameNetcodeStuff;
+
+namespace ExampleMod;
+
+public class ExamplePlayerCommand : Command
+{
+    public override string Name => "IsPlayerDead"; // Command name
+    public override string Description => "Shows if a player is dead"; // Command description
+    public override string[] Syntax => ["[player]"];
+
+    public override bool Invoke(string[] args, Dictionary<string, string> kwargs, out string error)
+    {
+        error = null!; // Don't set error message like "Player not found", this error is reported by the GetPlayer function automatically
+        PlayerControllerB player = GameNetworkManager.Instance.localPlayerController;
+        if (args.Length > 0)
+            if (!Utils.GetPlayer(args[0]))
+                return false; // Report failure, no error message, prevents further execution
+        ChatCommandAPI.ChatCommandAPI.Print(
+            player.isPlayerDead
+                ? $"Player {player.playerUsername} is dead."
+                : $"Player {player.playerUsername} is not dead."
+        );
+        return true; // Report success
+    }
+}
 ```

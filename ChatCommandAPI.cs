@@ -225,8 +225,6 @@ public class ChatCommandAPI : BaseUnityPlugin
         UpdateChat();
     }
 
-    public static void a() { }
-
     internal static void Patch()
     {
         Harmony ??= new Harmony(MyPluginInfo.PLUGIN_GUID);
