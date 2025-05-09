@@ -1,6 +1,6 @@
 {
   "name": "ChatCommandAPI",
-  "version_number": "0.0.2",
+  "version_number": "0.0.3",
   "website_url": "https://github.com/baerchen201/LethalChatCommands",
   "description": "A Lethal Company modding API for easy creation of Minecraft-style Chat Commands",
   "dependencies": [
