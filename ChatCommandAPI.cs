@@ -47,6 +47,7 @@ public class ChatCommandAPI : BaseUnityPlugin
         _ = new Help();
         _ = new Position();
         _ = new PlayerList();
+        _ = new ErrorCommand();
     }
 
     public bool RegisterCommand(Command command)
