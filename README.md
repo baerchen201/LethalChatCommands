@@ -2,7 +2,7 @@
 
 ### 1. Include API in your project
 
-Simply run `dotnet package add baer1.ChatCommandAPI` or add the following line to your csproj file:
+Simply run `dotnet add package baer1.ChatCommandAPI` or add the following line to your csproj file:
 
 ```msbuild
 <PackageReference Include="baer1.ChatCommandAPI" Version="0.*"/>
