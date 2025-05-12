@@ -66,6 +66,7 @@ public class ChatCommandAPI : BaseUnityPlugin
     {
         _ = new ExampleCommand();
     }
+}
 ```
 
 ### 4. Done!
