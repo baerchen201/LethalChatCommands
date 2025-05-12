@@ -25,7 +25,16 @@ public class Position : Command
         ChatCommandAPI.Print(
             $"Position of player <noparse>{player.playerUsername}:\n"
                 + player.transform.position
+                + (
+                    player.transform.parent != null
+                        ? $"\nrelative to {player.transform.parent.name}:\n{player.transform.parent.InverseTransformPoint(player.transform.position)}"
+                        : ""
+                )
                 + "</noparse>"
+        );
+        ChatCommandAPI.Logger.LogInfo(
+            $"Position of player"
+                + $"{player.playerUsername}: {player.transform.position}{(player.transform.parent != null ? $" - ({player.transform.parent.name})({player.transform.parent.InverseTransformPoint(player.transform.position)})" : "")}"
         );
         return true;
     }
