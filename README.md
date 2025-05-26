@@ -1,3 +1,11 @@
+## This mod is unfinished.
+
+**There may be major breaking changes before the first full release.**
+
+If you encounter any issues while playing or creating a mod with this API, please [report them on GitHub](https://github.com/baerchen201/LethalChatCommands/issues).
+
+This mod is open-source, you can contribute to it by [opening a pull request](https://github.com/baerchen201/LethalChatCommands/pulls)
+
 ## Getting started
 
 ### 1. Include API in your project
