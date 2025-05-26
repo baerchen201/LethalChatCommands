@@ -306,7 +306,7 @@ public class ChatCommandAPI : BaseUnityPlugin
             if (playerId >= 0 && playerId < StartOfRound.Instance.allPlayerScripts.Length)
                 caller = StartOfRound.Instance.allPlayerScripts[playerId];
             Logger.LogDebug($"   caller: {(caller == null ? "null" : caller.playerUsername)}");
-            if (caller == null)
+            if (caller == null || !Utils.IsPlayerControlled(caller))
             {
                 Logger.LogWarning(
                     $"Server command sent by invalid player {playerId}: {chatMessage}"
