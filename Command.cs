@@ -9,7 +9,7 @@ public abstract class Command
         ChatCommandAPI.Instance.RegisterCommand(this);
     }
 
-    public virtual string Name => this.GetType().Name;
+    public virtual string Name => GetType().Name;
     public virtual string[] Commands => [Name.ToLower()];
     public virtual string? Description => null;
     public virtual string[]? Syntax => null;

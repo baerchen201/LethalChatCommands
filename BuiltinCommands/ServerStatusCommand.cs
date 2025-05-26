@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Text;
 using GameNetcodeStuff;
 using HarmonyLib;
-using Unity.Netcode;
 
 namespace ChatCommandAPI.BuiltinCommands;
 

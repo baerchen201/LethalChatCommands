@@ -36,7 +36,6 @@ public abstract class ToggleCommand : Command
                 default:
                     return false;
             }
-        error = null!;
         PrintValue();
         return true;
     }

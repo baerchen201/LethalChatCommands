@@ -10,7 +10,7 @@ public class Help : Command
     public override bool Hidden => true;
     public override string Description => "Displays all available commands";
 
-    private const string SEPARATOR = "<color=#00FFFF>===============</color>\n";
+    internal const string SEPARATOR = "<color=#00FFFF>===============</color>\n";
 
     public override bool Invoke(string[] args, Dictionary<string, string> kwargs, out string error)
     {

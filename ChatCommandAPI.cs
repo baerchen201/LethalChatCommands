@@ -320,7 +320,7 @@ public class ChatCommandAPI : BaseUnityPlugin
                 Logger.LogWarning(
                     $"Server command sent by invalid player {playerId}: {chatMessage}"
                 );
-                if (!ChatCommandAPI.Instance.allowNullCaller.Value)
+                if (!Instance.allowNullCaller.Value)
                     return true;
             }
 
@@ -480,7 +480,7 @@ public class ChatCommandAPI : BaseUnityPlugin
                     )
                 )
                 .Advance(-1)
-                .Insert(CodeInstruction.Call(typeof(SendChatPatch), nameof(SendChatPatch.a)))
+                .Insert(CodeInstruction.Call(typeof(SendChatPatch), nameof(a)))
                 .InstructionEnumeration();
 
         [SuppressMessage(
@@ -522,20 +522,20 @@ public class ChatCommandAPI : BaseUnityPlugin
                 .Advance(1)
                 .Insert(
                     new CodeInstruction(OpCodes.Ldarg_1),
-                    CodeInstruction.Call(typeof(WelcomePatch), nameof(WelcomePatch.a))
+                    CodeInstruction.Call(typeof(WelcomePatch), nameof(a))
                 )
                 .InstructionEnumeration();
 
         public static void a(ulong clientId)
         {
             if (
-                ChatCommandAPI.Instance.ServerWelcomeMessage == null
-                || ChatCommandAPI.Instance.ServerWelcomeMessage.IsNullOrWhiteSpace()
+                Instance.ServerWelcomeMessage == null
+                || Instance.ServerWelcomeMessage.IsNullOrWhiteSpace()
             )
                 return;
             targetClientId = clientId;
             HUDManager.Instance.AddTextMessageClientRpc(
-                $"<color=#7069ff>{ChatCommandAPI.Instance.ServerWelcomeMessage.Trim()}</color>"
+                $"<color=#7069ff>{Instance.ServerWelcomeMessage.Trim()}</color>"
             );
             targetClientId = null;
         }

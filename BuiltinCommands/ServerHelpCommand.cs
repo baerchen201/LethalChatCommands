@@ -12,8 +12,6 @@ public class ServerHelp : ServerCommand
     public override bool Hidden => true;
     public override string Description => "Displays all available commands on the server";
 
-    private const string SEPARATOR = "<color=#00FFFF>===============</color>\n";
-
     public override bool Invoke(
         ref PlayerControllerB? caller,
         string[] args,
@@ -34,9 +32,9 @@ public class ServerHelp : ServerCommand
 
         ChatCommandAPI.Print(
             caller,
-            SEPARATOR
+            Help.SEPARATOR
                 + string.Join(
-                    SEPARATOR,
+                    Help.SEPARATOR,
                     ChatCommandAPI
                         .Instance.ServerCommandList.Where(i => !i.Hidden)
                         .Select(i =>
@@ -54,7 +52,7 @@ public class ServerHelp : ServerCommand
                             return sb.ToString();
                         })
                 )
-                + SEPARATOR.Trim()
+                + Help.SEPARATOR.Trim()
         );
         return true;
     }
