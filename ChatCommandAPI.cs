@@ -39,6 +39,9 @@ public class ChatCommandAPI : BaseUnityPlugin
     public string ServerCommandPrefix => serverCommandPrefix.Value;
     private List<ServerCommand> serverCommandList = null!;
     public IReadOnlyList<ServerCommand> ServerCommandList => serverCommandList;
+    private ConfigEntry<string> serverWelcomeMessage = null!;
+    public string? ServerWelcomeMessage =>
+        serverWelcomeMessage.Value.IsNullOrWhiteSpace() ? null : serverWelcomeMessage.Value.Trim();
 
     private void Awake()
     {
@@ -69,6 +72,12 @@ public class ChatCommandAPI : BaseUnityPlugin
             "BuiltInCommands",
             true,
             "Enables 'status' and 'mods' commands"
+        );
+        serverWelcomeMessage = Config.Bind(
+            "Server",
+            "ServerWelcomeMessage",
+            "This server has available commands.\nType !help for more information",
+            "A welcome message that is displayed to any player that joins (clear to disable)"
         );
 
         RegisterCommands();
@@ -363,22 +372,31 @@ public class ChatCommandAPI : BaseUnityPlugin
     public static void Print(string text, Color color)
     {
         HUDManager.Instance.ChatMessageHistory.Add(
-            $"<color=#{(byte)(color.r * 255):h2}{(byte)(color.g * 255):h2}{(byte)(color.b * 255):h2}>{text}</color>"
+            $"<color=#{(byte)(color.r * 255):x2}{(byte)(color.g * 255):x2}{(byte)(color.b * 255):x2}>{text}</color>"
         );
         UpdateChat();
     }
 
+    [Obsolete]
     public static void Print(string text, Tuple<byte, byte, byte> color)
     {
         HUDManager.Instance.ChatMessageHistory.Add(
-            $"<color=#{color.Item1:h2}{color.Item2:h2}{color.Item3:h2}>{text}</color>"
+            $"<color=#{color.Item1:x2}{color.Item2:x2}{color.Item3:x2}>{text}</color>"
+        );
+        UpdateChat();
+    }
+
+    public static void Print(string text, (byte, byte, byte) color)
+    {
+        HUDManager.Instance.ChatMessageHistory.Add(
+            $"<color=#{color.Item1:x2}{color.Item2:x2}{color.Item3:x2}>{text}</color>"
         );
         UpdateChat();
     }
 
     public static void Print(string text, byte r, byte g, byte b)
     {
-        HUDManager.Instance.ChatMessageHistory.Add($"<color=#{r:h2}{g:h2}{b:h2}>{text}</color>");
+        HUDManager.Instance.ChatMessageHistory.Add($"<color=#{r:x2}{g:x2}{b:x2}>{text}</color>");
         UpdateChat();
     }
 
@@ -402,22 +420,31 @@ public class ChatCommandAPI : BaseUnityPlugin
     public static void Print(PlayerControllerB caller, string text, Color color)
     {
         SendToPlayer(
-            $"<color=#{(byte)(color.r * 255):h2}{(byte)(color.g * 255):h2}{(byte)(color.b * 255):h2}>{text}</color>",
+            $"<color=#{(byte)(color.r * 255):x2}{(byte)(color.g * 255):x2}{(byte)(color.b * 255):x2}>{text}</color>",
             caller.actualClientId
         );
     }
 
+    [Obsolete]
     public static void Print(PlayerControllerB caller, string text, Tuple<byte, byte, byte> color)
     {
         SendToPlayer(
-            $"<color=#{color.Item1:h2}{color.Item2:h2}{color.Item3:h2}>{text}</color>",
+            $"<color=#{color.Item1:x2}{color.Item2:x2}{color.Item3:x2}>{text}</color>",
+            caller.actualClientId
+        );
+    }
+
+    public static void Print(PlayerControllerB caller, string text, (byte, byte, byte) color)
+    {
+        SendToPlayer(
+            $"<color=#{color.Item1:x2}{color.Item2:x2}{color.Item3:x2}>{text}</color>",
             caller.actualClientId
         );
     }
 
     public static void Print(PlayerControllerB caller, string text, byte r, byte g, byte b)
     {
-        SendToPlayer($"<color=#{r:h2}{g:h2}{b:h2}>{text}</color>", caller.actualClientId);
+        SendToPlayer($"<color=#{r:x2}{g:x2}{b:x2}>{text}</color>", caller.actualClientId);
     }
 
     public static void PrintWarning(PlayerControllerB caller, string text)
@@ -462,10 +489,10 @@ public class ChatCommandAPI : BaseUnityPlugin
         )]
         public static ClientRpcParams a(ClientRpcParams clientRpcParams)
         {
-            Logger.LogDebug(targetClientId);
             if (targetClientId == null)
                 return clientRpcParams;
 
+            Logger.LogDebug($"Redirecting message to {targetClientId}");
             clientRpcParams = default;
             clientRpcParams.Send.TargetClientIds = [targetClientId.Value];
             return clientRpcParams;
@@ -473,6 +500,46 @@ public class ChatCommandAPI : BaseUnityPlugin
     }
 
     internal static ulong? targetClientId;
+
+    [HarmonyPatch(typeof(StartOfRound), nameof(StartOfRound.OnClientConnect))]
+    public class WelcomePatch
+    {
+        // ReSharper disable once UnusedMember.Local
+        private static IEnumerable<CodeInstruction> Transpiler(
+            IEnumerable<CodeInstruction> instructions
+        ) =>
+            new CodeMatcher(instructions)
+                .MatchForward(
+                    true,
+                    new CodeMatch(
+                        OpCodes.Call,
+                        AccessTools.Method(
+                            typeof(StartOfRound),
+                            nameof(StartOfRound.OnPlayerConnectedClientRpc)
+                        )
+                    )
+                )
+                .Advance(1)
+                .Insert(
+                    new CodeInstruction(OpCodes.Ldarg_1),
+                    CodeInstruction.Call(typeof(WelcomePatch), nameof(WelcomePatch.a))
+                )
+                .InstructionEnumeration();
+
+        public static void a(ulong clientId)
+        {
+            if (
+                ChatCommandAPI.Instance.ServerWelcomeMessage == null
+                || ChatCommandAPI.Instance.ServerWelcomeMessage.IsNullOrWhiteSpace()
+            )
+                return;
+            targetClientId = clientId;
+            HUDManager.Instance.AddTextMessageClientRpc(
+                $"<color=#7069ff>{ChatCommandAPI.Instance.ServerWelcomeMessage.Trim()}</color>"
+            );
+            targetClientId = null;
+        }
+    }
 
     internal static void Patch()
     {
