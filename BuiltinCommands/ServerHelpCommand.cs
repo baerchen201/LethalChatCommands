@@ -2,31 +2,43 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using BepInEx;
+using GameNetcodeStuff;
 
 namespace ChatCommandAPI.BuiltinCommands;
 
-public class Help : Command
+public class ServerHelp : ServerCommand
 {
+    public override string Name => "Help";
     public override bool Hidden => true;
-    public override string Description => "Displays all available commands";
+    public override string Description => "Displays all available commands on the server";
 
     private const string SEPARATOR = "<color=#00FFFF>===============</color>\n";
 
-    public override bool Invoke(string[] args, Dictionary<string, string> kwargs, out string error)
+    public override bool Invoke(
+        ref PlayerControllerB? caller,
+        string[] args,
+        Dictionary<string, string> kwargs,
+        out string error
+    )
     {
-        error = "No commands have been registered yet";
+        error = "caller is null";
+        if (caller == null)
+            return false;
+
+        error = "This server has no available commands";
         if (
-            ChatCommandAPI.Instance.CommandList == null!
-            || ChatCommandAPI.Instance.CommandList.Count(i => !i.Hidden) == 0
+            ChatCommandAPI.Instance.ServerCommandList == null!
+            || ChatCommandAPI.Instance.ServerCommandList.Count(i => !i.Hidden) == 0
         )
             return false;
 
         ChatCommandAPI.Print(
+            caller,
             SEPARATOR
                 + string.Join(
                     SEPARATOR,
                     ChatCommandAPI
-                        .Instance.CommandList.Where(i => !i.Hidden)
+                        .Instance.ServerCommandList.Where(i => !i.Hidden)
                         .Select(i =>
                         {
                             StringBuilder sb = new StringBuilder(
@@ -35,7 +47,7 @@ public class Help : Command
                             foreach (string usage in i.Syntax ?? [null!])
                             {
                                 sb.Append(
-                                    $"<color=#ffff00>{ChatCommandAPI.Instance.CommandPrefix}{i.Commands[0]}{(usage.IsNullOrWhiteSpace() ? "" : " ")}</color><color=#dddd00><noparse>{usage}</noparse></color>\n"
+                                    $"<color=#ffff00>{ChatCommandAPI.Instance.ServerCommandPrefix}{i.Commands[0]}{(usage.IsNullOrWhiteSpace() ? "" : " ")}</color><color=#dddd00><noparse>{usage}</noparse></color>\n"
                                 );
                             }
 

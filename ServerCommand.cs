@@ -1,0 +1,25 @@
+using System.Collections.Generic;
+using GameNetcodeStuff;
+
+namespace ChatCommandAPI;
+
+public abstract class ServerCommand
+{
+    protected ServerCommand()
+    {
+        ChatCommandAPI.Instance.RegisterServerCommand(this);
+    }
+
+    public virtual string Name => this.GetType().Name;
+    public virtual string[] Commands => [Name.ToLower()];
+    public virtual string? Description => null;
+    public virtual string[]? Syntax => null;
+    public virtual bool Hidden => false;
+
+    public abstract bool Invoke(
+        ref PlayerControllerB? caller,
+        string[] args,
+        Dictionary<string, string> kwargs,
+        out string error
+    );
+}
