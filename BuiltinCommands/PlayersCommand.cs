@@ -7,6 +7,7 @@ public class PlayerList : Command
 {
     public override string[] Commands => ["players", Name];
     public override string Description => "Lists all active players";
+    public override bool Hidden => true;
 
     public override bool Invoke(string[] args, Dictionary<string, string> kwargs, out string error)
     {

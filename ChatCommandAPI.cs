@@ -17,6 +17,8 @@ using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using Position = ChatCommandAPI.BuiltinCommands.Position;
 
+// ReSharper disable InvertIf
+
 namespace ChatCommandAPI;
 
 [BepInPlugin(MyPluginInfo.PLUGIN_GUID, MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
@@ -84,6 +86,18 @@ public class ChatCommandAPI : BaseUnityPlugin
         Patch();
 
         Logger.LogInfo($"{MyPluginInfo.PLUGIN_NAME} v{MyPluginInfo.PLUGIN_VERSION} has loaded!");
+        return;
+
+        void Patch()
+        {
+            Harmony ??= new Harmony(MyPluginInfo.PLUGIN_GUID);
+
+            Logger.LogDebug("Patching...");
+
+            Harmony.PatchAll();
+
+            Logger.LogDebug("Finished patching!");
+        }
     }
 
     private void RegisterCommands()
@@ -96,7 +110,6 @@ public class ChatCommandAPI : BaseUnityPlugin
 
         serverCommandList = [];
         _ = new ServerHelp();
-        // ReSharper disable once InvertIf
         if (builtInCommands.Value)
         {
             _ = new ServerStatus();
@@ -142,11 +155,9 @@ public class ChatCommandAPI : BaseUnityPlugin
         args = null!;
         kwargs = null!;
 
-        Match match = (
-            new Regex(
-                $@"(?:{Regex.Escape(CommandPrefix)}|{Regex.Escape(ServerCommandPrefix)})([a-z]+)(?: ([^ =""]+|(?:""[^""]*?"")))*?(?: ([^ =""]+=[^ ""]+|[^ =""]+=""[^""]*?""))*\s*$",
-                RegexOptions.IgnoreCase | RegexOptions.Multiline
-            )
+        Match match = new Regex(
+            $"""(?:{Regex.Escape(CommandPrefix)}|{Regex.Escape(ServerCommandPrefix)})([a-z]+)(?: ([^ ="]+|(?:"[^"]*?")))*?(?: ([^ ="]+=[^ "]+|[^ ="]+="[^"]*?"))*\s*$""",
+            RegexOptions.IgnoreCase | RegexOptions.Multiline
         ).Match(input);
         if (!match.Success)
             return false;
@@ -539,25 +550,5 @@ public class ChatCommandAPI : BaseUnityPlugin
             );
             targetClientId = null;
         }
-    }
-
-    internal static void Patch()
-    {
-        Harmony ??= new Harmony(MyPluginInfo.PLUGIN_GUID);
-
-        Logger.LogDebug("Patching...");
-
-        Harmony.PatchAll();
-
-        Logger.LogDebug("Finished patching!");
-    }
-
-    internal static void Unpatch()
-    {
-        Logger.LogDebug("Unpatching...");
-
-        Harmony?.UnpatchSelf();
-
-        Logger.LogDebug("Finished unpatching!");
     }
 }

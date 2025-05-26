@@ -8,6 +8,7 @@ public class Position : Command
     public override string[] Commands => ["pos", "getpos", "showpos", Name];
     public override string Description => "Shows the current position of [player] or yourself";
     public override string[] Syntax => ["[player]"];
+    public override bool Hidden => true;
 
     public override bool Invoke(string[] args, Dictionary<string, string> kwargs, out string error)
     {
