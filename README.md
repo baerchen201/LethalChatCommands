@@ -89,7 +89,7 @@ public class ExampleCommand : Command
 {
     public override string Name => "Example"; // Command name (default: Class name)
     public override string[] Commands =>
-        ["MyCommand", Name, "ExampleCommand", "Command", "HelloWorld"]; // Aliases (first entry is displayed on help, default: Name)
+        ["MyCommand", Name, "ExampleCommand", "Command", "HelloWorld"]; // Aliases (first entry is displayed on help, default: Name.ToLower())
     public override string Description => "Prints Hello World [amount] times"; // Short description of this command
     public override string[] Syntax => ["", "[amount]"]; // All valid syntaxes for this command (only for help, not validated)
     public override bool Hidden => false; // Whether to hide this command from the help list (useful for debugging, default: false)

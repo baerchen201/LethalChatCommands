@@ -42,7 +42,6 @@ public class ExampleMod : BaseUnityPlugin
 public class StatusCommand : Command // Create command subclass
 {
     public override string Name => "Status"; // Set command name (default would have been "StatusCommand")
-    public override string[] Commands => [Name.ToLower()]; // While this is not necessary (the Chat Command API is case-insensitive), /status looks better than /Status
     public override string Description => "Displays some useful information about the current game"; // Command description for /help
 
     public override bool Invoke(string[] args, Dictionary<string, string> kwargs, out string error)
