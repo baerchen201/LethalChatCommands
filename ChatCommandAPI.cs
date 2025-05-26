@@ -87,10 +87,12 @@ public class ChatCommandAPI : BaseUnityPlugin
 
         serverCommandList = [];
         _ = new ServerHelp();
+        // ReSharper disable once InvertIf
         if (builtInCommands.Value)
         {
             _ = new ServerStatus();
             _ = new ServerMods();
+            _ = new ServerPing();
         }
     }
 
