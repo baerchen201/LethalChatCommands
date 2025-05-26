@@ -262,7 +262,10 @@ public class ChatCommandAPI : BaseUnityPlugin
                 Logger.LogInfo(sb + ")");
 
                 if (!Instance.RunCommand(command, args, kwargs, out var error))
+                {
+                    Logger.LogWarning($"   Error running command: {error}");
                     PrintError($"Error running command: <noparse>{error}</noparse>");
+                }
                 return false;
             }
 
@@ -326,11 +329,13 @@ public class ChatCommandAPI : BaseUnityPlugin
                 sb.Append(kwargs.Select(kvp => $"{kvp.Key}: {kvp.Value}").Join());
                 Logger.LogInfo(sb + ")");
 
-                if (
-                    !Instance.RunCommand(ref caller, command, args, kwargs, out var error)
-                    && caller != null
-                )
-                    PrintError(caller, $"Error running command: <noparse>{error}</noparse>");
+                if (!Instance.RunCommand(ref caller, command, args, kwargs, out var error))
+                {
+                    Logger.LogWarning($"   Error running command: {error}");
+                    if (caller != null)
+                        PrintError(caller, $"Error running command: <noparse>{error}</noparse>");
+                }
+
                 return false;
             }
 
