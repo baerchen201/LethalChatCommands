@@ -37,14 +37,18 @@ public class ServerStatus : ServerCommand
 
             sb.Append(player!.isPlayerDead ? "<color=#ff0000>" : "");
             sb.Append($" #{player.playerClientId} {player.playerUsername}");
-            sb.Append(player.isHostPlayerObject ? " (HOST)\n" : "\n");
+            if (player.isHostPlayerObject)
+                sb.Append(" (HOST)");
             sb.Append(player.isPlayerDead ? "</color>" : "");
         }
 
-        TimeSpan timePlaying = DateTime.Now - startTime;
-        sb.Append(
-            $"Game time: {(int)timePlaying.TotalHours:D2}:{timePlaying.Minutes:D2}:{timePlaying.Seconds:D2}"
-        );
+        if (startTime.Ticks > 0)
+        {
+            TimeSpan timePlaying = DateTime.Now - startTime;
+            sb.Append(
+                $"\nGame time: {(int)timePlaying.TotalHours:D2}:{timePlaying.Minutes:D2}:{timePlaying.Seconds:D2}"
+            );
+        }
 
         ChatCommandAPI.Print(caller, sb.ToString());
         return true;
@@ -52,16 +56,10 @@ public class ServerStatus : ServerCommand
 
     private static DateTime startTime = new(0);
 
-    [HarmonyPatch(typeof(NetworkManager), nameof(NetworkManager.StartHost))]
-    [HarmonyPatch(typeof(NetworkManager), nameof(NetworkManager.StartClient))]
-    [HarmonyPatch(typeof(NetworkManager), nameof(NetworkManager.StartServer))]
+    [HarmonyPatch(typeof(GameNetworkManager), nameof(GameNetworkManager.StartHost))]
     internal class StartPatch
     {
         // ReSharper disable once UnusedMember.Local
-        private static void Postfix(ref bool __result)
-        {
-            if (__result)
-                startTime = DateTime.Now;
-        }
+        private static void Postfix() => startTime = DateTime.Now;
     }
 }
