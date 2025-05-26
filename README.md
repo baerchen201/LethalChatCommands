@@ -119,6 +119,52 @@ Example - Prints Hello World [amount] times
 /MyCommand [amount]
 ```
 
+### Server commands
+
+Server commands are commands that anyone on the server can use, as long as the host has them installed.
+
+They are very similar to the client commands.
+
+Example:
+
+```csharp
+using System.Collections.Generic;
+using GameNetcodeStuff;
+using Unity.Netcode;
+
+namespace ChatCommandAPI.BuiltinCommands;
+
+public class ServerPing : ServerCommand
+{
+    public override string Name => "Ping"; // Command name
+    public override string Description => "Displays your latency to the server"; // Command description (for !help)
+
+    public override bool Invoke(
+        ref PlayerControllerB? caller, // Player that sent the command (can be spoofed, this may be fixed in the future)
+        string[] args,
+        Dictionary<string, string> kwargs,
+        out string error
+    )
+    {
+        error = "caller is null"; // error message is not reported to anyone, but it is logged
+        if (caller == null) // We need a player to run this command to get their ping
+            return false;
+
+        ChatCommandAPI.Print(
+            caller, // Only prints text to this player
+            $"Latency: {Ping(caller)}ms"
+        );
+        return true;
+    }
+
+    // returns ping of player
+    private static ulong Ping(PlayerControllerB player) =>
+        NetworkManager.Singleton.NetworkConfig.NetworkTransport.GetCurrentRtt(
+            player.actualClientId
+        );
+}
+```
+
 ### Using ToggleCommand
 
 If you are creating a command that is supposed to act as a toggle (on or off), you can use the `ToggleCommand` class to make this easier.
