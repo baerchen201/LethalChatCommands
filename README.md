@@ -5,7 +5,7 @@
 Simply run `dotnet add package baer1.ChatCommandAPI` or add the following line to your csproj file:
 
 ```msbuild
-<PackageReference Include="baer1.ChatCommandAPI" Version="0.*"/>
+<PackageReference Include="baer1.ChatCommandAPI" Version="0.1.*"/>
 ```
 
 Additionally, you should reference this mod in both your main plugin class and your manifest.json \(replace `<VERSION>` with the actual version you are using\):
