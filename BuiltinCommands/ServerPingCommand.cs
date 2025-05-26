@@ -8,7 +8,6 @@ namespace ChatCommandAPI.BuiltinCommands;
 public class ServerPing : ServerCommand
 {
     public override string Name => "Ping";
-    public override string[] Commands => [Name.ToLower()];
     public override string Description => "Displays your latency to the server";
 
     public override bool Invoke(

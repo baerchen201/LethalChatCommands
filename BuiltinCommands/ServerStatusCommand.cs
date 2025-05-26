@@ -10,7 +10,6 @@ namespace ChatCommandAPI.BuiltinCommands;
 public class ServerStatus : ServerCommand
 {
     public override string Name => "Status";
-    public override string[] Commands => [Name.ToLower()];
     public override string Description => "Displays information about this server";
 
     public override bool Invoke(

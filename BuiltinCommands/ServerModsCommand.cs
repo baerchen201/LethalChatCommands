@@ -10,7 +10,6 @@ namespace ChatCommandAPI.BuiltinCommands;
 public class ServerMods : ServerCommand
 {
     public override string Name => "ServerMods";
-    public override string[] Commands => ["mods", Name];
     public override string Description => "Shows a list of all mods installed on the server";
 
     public override bool Invoke(

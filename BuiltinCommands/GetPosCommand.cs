@@ -5,7 +5,7 @@ namespace ChatCommandAPI.BuiltinCommands;
 
 public class Position : Command
 {
-    public override string[] Commands => ["pos", "getpos", "showpos", Name.ToLower()];
+    public override string[] Commands => ["pos", "getpos", "showpos", Name];
     public override string Description => "Shows the current position of [player] or yourself";
     public override string[] Syntax => ["[player]"];
 
