@@ -114,7 +114,6 @@ public class ChatCommandAPI : BaseUnityPlugin
         {
             _ = new ServerStatus();
             _ = new ServerMods();
-            _ = new ServerPing();
         }
     }
 

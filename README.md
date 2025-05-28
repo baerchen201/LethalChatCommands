@@ -133,19 +133,19 @@ Server commands are commands that anyone on the server can use, as long as the h
 
 They are very similar to the client commands.
 
-Example:
+Example (simple implementation of the ShipLoot mod as a server command):
 
 ```csharp
 using System.Collections.Generic;
+using System.Linq;
 using GameNetcodeStuff;
-using Unity.Netcode;
+using UnityEngine;
 
 namespace ChatCommandAPI.BuiltinCommands;
 
-public class ServerPing : ServerCommand
+public class ShipLoot : ServerCommand
 {
-    public override string Name => "Ping"; // Command name
-    public override string Description => "Displays your latency to the server"; // Command description (for !help)
+    public override string Description => "Displays the value of all loot on the ship"; // Command description (for !help)
 
     public override bool Invoke(
         ref PlayerControllerB? caller, // Player that sent the command (can be spoofed, this may be fixed in the future)
@@ -155,21 +155,26 @@ public class ServerPing : ServerCommand
     )
     {
         error = "caller is null"; // error message is not reported to anyone, but it is logged
-        if (caller == null) // We need a player to run this command to get their ping
+        if (caller == null) // We need a player to respond to
+            return false;
+
+        error = "Ship not found"; // We need the ship to calculate the value of the loot on it
+        var ship = GameObject.Find("/Environment/HangarShip");
+        if (ship == null)
             return false;
 
         ChatCommandAPI.Print(
             caller, // Only prints text to this player
-            $"Latency: {Ping(caller)}ms"
+            $"Ship: {ItemValue(ship)}"
         );
         return true;
     }
 
-    // returns ping of player
-    private static ulong Ping(PlayerControllerB player) =>
-        NetworkManager.Singleton.NetworkConfig.NetworkTransport.GetCurrentRtt(
-            player.actualClientId
-        );
+    // returns value of loot on ship
+    private static int ItemValue(GameObject ship) =>
+        ship.GetComponentsInChildren<GrabbableObject>()
+            .Where(obj => obj.itemProperties.isScrap && obj is not RagdollGrabbableObject)
+            .Sum(scrap => scrap.scrapValue);
 }
 ```
 
