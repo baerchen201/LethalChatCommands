@@ -243,3 +243,82 @@ public class ExamplePlayerCommand : Command
     }
 }
 ```
+
+### Position arguments
+
+If you want to allow a position coordinates as an argument, you should use the `Utils.ParsePosition` function:
+
+```csharp
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+
+namespace ChatCommandAPI.BuiltinCommands;
+
+public class Teleport : Command
+{
+    public override string[] Commands => ["tp", Name];
+    public override string Description =>
+        "Teleports you to the specified coordinates\n"
+        + "<color=#ffff00>Can only be used in singleplayer</color>"; // Yellow warning about only usable in singleplayer
+
+    public override string[] Syntax => ["<x> <y> <z>", "<x,y,z>"]; // Simple syntax for position
+
+    public override bool Invoke(string[] args, Dictionary<string, string> kwargs, out string error)
+    {
+        // Only allow this command when you are the only player (and host) in the game, to prevent cheating in multiplayer
+        error = "You can only teleport in singleplayer";
+        if (
+            StartOfRound.Instance.allPlayerScripts.Count(Utils.IsPlayerControlled) > 1
+            || !GameNetworkManager.Instance.localPlayerController.isHostPlayerObject
+        )
+            return false;
+
+        error = "Invalid coordinates";
+        Vector3 position = GameNetworkManager.Instance.localPlayerController.transform.position; // Origin for ~ and ^
+        Vector3 newPosition; // Initialize new position variable
+        switch (args.Length)
+        {
+            case 1: // If only one argument, it should be the comma notation (x,y,z)
+                if ( // If the position input is invalid, ...
+                    !Utils.ParsePosition(
+                        position,
+                        GameNetworkManager.Instance.localPlayerController.transform.rotation, // Player rotation for ^
+                        args[0],
+                        out newPosition // Automatically saves position to the correct variable
+                    )
+                )
+                    return false; // ... return error
+                break;
+
+            case 3: // If three arguments, it should be the space notation (x y z)
+                if ( // If the position input is invalid, ...
+                    !Utils.ParsePosition(
+                        position,
+                        GameNetworkManager.Instance.localPlayerController.transform.rotation, // Player rotation for ^
+                        args[0],
+                        args[1],
+                        args[2],
+                        out newPosition // Automatically saves position to the correct variable
+                    )
+                )
+                    return false; // ... return error
+                break;
+
+            default: // If not 1 or 3 arguments, position is invalid
+                error = "Invalid arguments";
+                return false;
+        }
+        
+        GameNetworkManager.Instance.localPlayerController.TeleportPlayer(newPosition); // Teleport player
+        GameNetworkManager.Instance.localPlayerController.isInsideFactory = Utils.IsInsideFactory( // Fix lighting
+            position
+        );
+        ChatCommandAPI.Print(
+            $"Teleported to {newPosition} (distance:{Math.Round(Vector3.Distance(position, newPosition), 2)})"
+        );
+        return true;
+    }
+}
+```
