@@ -371,6 +371,7 @@ public class ChatCommandAPI : BaseUnityPlugin
             "\n",
             HUDManager.Instance.ChatMessageHistory
         );
+        HUDManager.Instance.PingHUDElement(HUDManager.Instance.Chat, 4f);
     }
 
     public static void Print(string text)
