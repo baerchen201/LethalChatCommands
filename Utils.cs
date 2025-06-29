@@ -21,6 +21,8 @@ public static class Utils
         uint playerId;
         PlayerControllerB[] players;
         id = id.Trim();
+        if (id.ToLower() is "@s" or "@me")
+            return GameNetworkManager.Instance.localPlayerController;
 
         switch (id[0])
         {
@@ -80,8 +82,7 @@ public static class Utils
             );
         if (players.Length > 0)
             return players[0];
-        if (id is "@s" or "@me")
-            return GameNetworkManager.Instance.localPlayerController;
+
         ChatCommandAPI.PrintError("No player with username found");
         return null;
     }
