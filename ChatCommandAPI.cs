@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -43,7 +44,9 @@ public class ChatCommandAPI : BaseUnityPlugin
     public IReadOnlyList<ServerCommand> ServerCommandList => serverCommandList;
     private ConfigEntry<string> serverWelcomeMessage = null!;
     public string? ServerWelcomeMessage =>
-        serverWelcomeMessage.Value.IsNullOrWhiteSpace() ? null : serverWelcomeMessage.Value.Trim();
+        serverWelcomeMessage.Value.IsNullOrWhiteSpace()
+            ? null
+            : string.Format(serverWelcomeMessage.Value.Trim(), ServerCommandPrefix);
 
     private void Awake()
     {
@@ -73,13 +76,13 @@ public class ChatCommandAPI : BaseUnityPlugin
             "Server",
             "BuiltInCommands",
             true,
-            "Enables 'status' and 'mods' commands"
+            "Enables 'status' and 'servermods' commands"
         );
         serverWelcomeMessage = Config.Bind(
             "Server",
             "ServerWelcomeMessage",
-            "This server has available commands.\nType !help for more information",
-            "A welcome message that is displayed to any player that joins (clear to disable)"
+            "This server has available commands.\nType {0}help for more information",
+            "A welcome message that is displayed to any player that joins (clear to disable). {0} is replaced with ServerCommandPrefix"
         );
 
         RegisterCommands();
@@ -340,7 +343,7 @@ public class ChatCommandAPI : BaseUnityPlugin
             if (Instance.ParseCommand(chatMessage, out var command, out var args, out var kwargs))
             {
                 StringBuilder sb = new StringBuilder(
-                    $"<< Parsed command: {command}({(caller == null ? "null" : $"#{caller.playerClientId} {caller.playerUsername}")}{(args.Length > 0 && kwargs.Count > 0 ? ", " : "")}"
+                    $"<< Parsed command: {command}({(caller == null ? "null" : $"#{caller.playerClientId} {caller.playerUsername}")}{(args.Length > 0 || kwargs.Count > 0 ? ", " : "")}"
                 );
                 if (args.Length > 0)
                 {
@@ -482,7 +485,7 @@ public class ChatCommandAPI : BaseUnityPlugin
     }
 
     [HarmonyPatch(typeof(HUDManager), nameof(HUDManager.AddTextMessageClientRpc))]
-    public class SendChatPatch
+    internal class SendChatPatch
     {
         // ReSharper disable once UnusedMember.Local
         private static IEnumerable<CodeInstruction> Transpiler(
@@ -519,7 +522,7 @@ public class ChatCommandAPI : BaseUnityPlugin
     internal static ulong? targetClientId;
 
     [HarmonyPatch(typeof(StartOfRound), nameof(StartOfRound.OnClientConnect))]
-    public class WelcomePatch
+    internal class WelcomePatch
     {
         // ReSharper disable once UnusedMember.Local
         private static IEnumerable<CodeInstruction> Transpiler(
@@ -527,7 +530,7 @@ public class ChatCommandAPI : BaseUnityPlugin
         ) =>
             new CodeMatcher(instructions)
                 .MatchForward(
-                    true,
+                    false,
                     new CodeMatch(
                         OpCodes.Call,
                         AccessTools.Method(
@@ -543,16 +546,20 @@ public class ChatCommandAPI : BaseUnityPlugin
                 )
                 .InstructionEnumeration();
 
-        public static void a(ulong clientId)
+        internal static void a(ulong clientId)
         {
+            Logger.LogDebug(
+                $">> WelcomePatch({clientId}) ServerWelcomeMessage:{Instance.ServerWelcomeMessage ?? "null"} IsNullOrWhiteSpace:{Instance.ServerWelcomeMessage.IsNullOrWhiteSpace()}"
+            );
             if (
                 Instance.ServerWelcomeMessage == null
                 || Instance.ServerWelcomeMessage.IsNullOrWhiteSpace()
             )
                 return;
+
             targetClientId = clientId;
             HUDManager.Instance.AddTextMessageClientRpc(
-                $"<color=#7069ff>{Instance.ServerWelcomeMessage.Trim()}</color>"
+                $"<color=#7069ff>{Instance.ServerWelcomeMessage}</color>"
             );
             targetClientId = null;
         }
