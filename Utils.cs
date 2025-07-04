@@ -16,11 +16,15 @@ public static class Utils
         && player is { disconnectedMidGame: false, isTestingPlayer: false }
         && (player.isPlayerControlled || player.isPlayerDead);
 
-    public static PlayerControllerB? GetPlayer(string id, bool strict = false)
+    public static PlayerControllerB? GetPlayer(string id, out string error, bool strict = false)
     {
         uint playerId;
         PlayerControllerB[] players;
         id = id.Trim();
+        error = "No player specified";
+        if (id.Length == 0)
+            return null;
+        error = null!;
         if (id.ToLower() is "@s" or "@me")
             return GameNetworkManager.Instance.localPlayerController;
 
@@ -33,7 +37,7 @@ public static class Utils
                     && IsPlayerControlled(StartOfRound.Instance.allPlayerScripts[playerId])
                 )
                     return StartOfRound.Instance.allPlayerScripts[playerId];
-                ChatCommandAPI.PrintError("Invalid player id");
+                error = "Invalid player id";
                 return null;
             case '@':
                 players = StartOfRound
@@ -77,20 +81,30 @@ public static class Utils
                 .ToArray();
         players:
         if (players.Length > 1)
-            ChatCommandAPI.PrintWarning(
-                "Multiple players with this name exist, selecting first..."
-            );
+        {
+            if (strict)
+            {
+                error = "Multiple players match";
+                return null;
+            }
+            ChatCommandAPI.PrintWarning("Multiple players match, selecting first...");
+        }
         if (players.Length > 0)
             return players[0];
 
-        ChatCommandAPI.PrintError("No player with username found");
+        error = "No player matches";
         return null;
     }
 
-    public static bool GetPlayer(string id, out PlayerControllerB player, bool strict = false)
+    public static bool GetPlayer(
+        string id,
+        out PlayerControllerB player,
+        out string error,
+        bool strict = false
+    )
     {
         player = GameNetworkManager.Instance.localPlayerController;
-        PlayerControllerB? _player = GetPlayer(id, strict);
+        PlayerControllerB? _player = GetPlayer(id, out error, strict);
         if (_player == null)
             return false;
         player = _player;
@@ -136,20 +150,40 @@ public static class Utils
         y = y.Trim();
         z = z.Trim();
 
-        if (!x.StartsWith("~") || !y.StartsWith("~") || !z.StartsWith("~"))
-            return ParsePosition(x, y, z);
-
-        x = x[1..];
-        y = y[1..];
-        z = z[1..];
-
-        if (
-            (!float.TryParse(x, out var rxf) && x.Length > 0)
-            || (!float.TryParse(y, out var ryf) && y.Length > 0)
-            || (!float.TryParse(z, out var rzf) && z.Length > 0)
-        )
+        float xf,
+            yf,
+            zf;
+        if (x.StartsWith('~'))
+        {
+            x = x[1..];
+            if (!float.TryParse(x, out xf) && x.Length > 0)
+                return null;
+            xf += origin.x;
+        }
+        else if (!float.TryParse(x, out xf))
             return null;
-        return origin + new Vector3(rxf, ryf, rzf);
+
+        if (y.StartsWith('~'))
+        {
+            y = y[1..];
+            if (!float.TryParse(y, out yf) && y.Length > 0)
+                return null;
+            yf += origin.y;
+        }
+        else if (!float.TryParse(y, out yf))
+            return null;
+
+        if (z.StartsWith('~'))
+        {
+            z = z[1..];
+            if (!float.TryParse(z, out zf) && z.Length > 0)
+                return null;
+            zf += origin.z;
+        }
+        else if (!float.TryParse(z, out zf))
+            return null;
+
+        return new Vector3(xf, yf, zf);
     }
 
     public static Vector3? ParsePosition(string x, string y, string z)
@@ -271,10 +305,94 @@ public static class Utils
         return true;
     }
 
+    [Obsolete]
     public static bool IsInsideFactory(Vector3 position)
     {
         return Object
             .FindObjectsOfType<OutOfBoundsTrigger>()
             .Any(i => position.y < i.gameObject.transform.position.y);
+    }
+
+    [Obsolete]
+    public static PlayerControllerB? GetPlayer(string id, bool strict = false)
+    {
+        uint playerId;
+        PlayerControllerB[] players;
+        id = id.Trim();
+        if (id.ToLower() is "@s" or "@me")
+            return GameNetworkManager.Instance.localPlayerController;
+
+        switch (id[0])
+        {
+            case '#':
+                if (
+                    uint.TryParse(id.TrimStart('#'), out playerId)
+                    && playerId < StartOfRound.Instance.allPlayerScripts.Length
+                    && IsPlayerControlled(StartOfRound.Instance.allPlayerScripts[playerId])
+                )
+                    return StartOfRound.Instance.allPlayerScripts[playerId];
+                ChatCommandAPI.PrintError("Invalid player id");
+                return null;
+            case '@':
+                players = StartOfRound
+                    .Instance.allPlayerScripts.Where(i =>
+                        IsPlayerControlled(i)
+                        && string.Equals(
+                            i.playerUsername,
+                            id.TrimStart('@'),
+                            StringComparison.CurrentCultureIgnoreCase
+                        )
+                    )
+                    .ToArray();
+                if (players.Length == 0 && !strict)
+                    players = StartOfRound
+                        .Instance.allPlayerScripts.Where(i =>
+                            IsPlayerControlled(i)
+                            && i.playerUsername.ToLower().StartsWith(id.ToLower().TrimStart('@'))
+                        )
+                        .ToArray();
+                goto players;
+        }
+
+        if (
+            uint.TryParse(id, out playerId)
+            && playerId < StartOfRound.Instance.allPlayerScripts.Length
+            && IsPlayerControlled(StartOfRound.Instance.allPlayerScripts[playerId])
+        )
+            return StartOfRound.Instance.allPlayerScripts[playerId];
+
+        players = StartOfRound
+            .Instance.allPlayerScripts.Where(i =>
+                IsPlayerControlled(i)
+                && string.Equals(i.playerUsername, id, StringComparison.CurrentCultureIgnoreCase)
+            )
+            .ToArray();
+        if (players.Length == 0 && !strict)
+            players = StartOfRound
+                .Instance.allPlayerScripts.Where(i =>
+                    IsPlayerControlled(i) && i.playerUsername.ToLower().StartsWith(id.ToLower())
+                )
+                .ToArray();
+        players:
+        if (players.Length > 1)
+            ChatCommandAPI.PrintWarning(
+                "Multiple players with this name exist, selecting first..."
+            );
+        if (players.Length > 0)
+            return players[0];
+
+        ChatCommandAPI.PrintError("No player with username found");
+        return null;
+    }
+
+    [Obsolete]
+    public static bool GetPlayer(string id, out PlayerControllerB player, bool strict = false)
+    {
+        player = GameNetworkManager.Instance.localPlayerController;
+        PlayerControllerB? _player = GetPlayer(id, strict);
+        if (_player == null)
+            return false;
+        player = _player;
+        return true;
     }
 }

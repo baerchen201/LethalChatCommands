@@ -16,7 +16,7 @@ public class Position : Command
 
         PlayerControllerB player = GameNetworkManager.Instance.localPlayerController;
         if (args.Length > 0)
-            if (!Utils.GetPlayer(args[0], out player))
+            if (!Utils.GetPlayer(args[0], out player, out error))
                 return false;
 
         error = "This player is dead";
