@@ -282,8 +282,11 @@ public class ChatCommandAPI : BaseUnityPlugin
 
                 if (!Instance.RunCommand(command, args, kwargs, out var error))
                 {
-                    Logger.LogWarning($"   Error running command: {error}");
-                    PrintError($"Error running command: <noparse>{error}</noparse>");
+                    Logger.LogWarning($"   Error running command: {(error ?? "null")}");
+                    if (error != null)
+                        PrintError(
+                            $"Error running command{(error.IsNullOrWhiteSpace() ? "" : $": <noparse>{error}</noparse>")}"
+                        );
                 }
                 return false;
             }
@@ -350,9 +353,12 @@ public class ChatCommandAPI : BaseUnityPlugin
 
                 if (!Instance.RunCommand(ref caller, command, args, kwargs, out var error))
                 {
-                    Logger.LogWarning($"   Error running command: {error}");
-                    if (caller != null)
-                        PrintError(caller, $"Error running command: <noparse>{error}</noparse>");
+                    Logger.LogWarning($"   Error running command: {error ?? "null"}");
+                    if (caller != null && error != null)
+                        PrintError(
+                            caller,
+                            $"Error running command{(error.IsNullOrWhiteSpace() ? "" : $": <noparse>{error}</noparse>")}"
+                        );
                 }
 
                 return false;
