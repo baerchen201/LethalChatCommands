@@ -13,7 +13,7 @@ This mod is open-source, you can contribute to it by [opening a pull request](ht
 Simply run `dotnet add package baer1.ChatCommandAPI` or add the following line to your csproj file:
 
 ```msbuild
-<PackageReference Include="baer1.ChatCommandAPI" Version="0.1.*"/>
+<PackageReference Include="baer1.ChatCommandAPI" Version="0.2.*"/>
 ```
 
 Additionally, you should reference this mod in both your main plugin class and your manifest.json \(replace `<VERSION>` with the actual version you are using\):
@@ -56,7 +56,7 @@ public class ExampleCommand : Command
 {
     public override bool Invoke(string[] args, Dictionary<string, string> kwargs, out string error)
     {
-        error = null!;
+        error = null!; // No error message
         // Put your code here
         return true;
     }
@@ -237,7 +237,7 @@ public class ExamplePlayerCommand : Command
         error = null!; // Don't set error message like "Player not found", this error is reported by the GetPlayer function automatically
         PlayerControllerB player = GameNetworkManager.Instance.localPlayerController;
         if (args.Length > 0)
-            if (!Utils.GetPlayer(args[0]))
+            if (!Utils.GetPlayer(args[0], out error, out player))
                 return false; // Report failure, no error message, prevents further execution
         ChatCommandAPI.ChatCommandAPI.Print(
             player.isPlayerDead
@@ -258,6 +258,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace ChatCommandAPI.BuiltinCommands;
 
@@ -281,7 +282,7 @@ public class Teleport : Command
             return false;
 
         error = "Invalid coordinates";
-        Vector3 position = GameNetworkManager.Instance.localPlayerController.transform.position; // Origin for ~ and ^
+        Vector3 position = GameNetworkManager.Instance.localPlayerController.transform.position; // Origin for relative and local coordinates
         Vector3 newPosition; // Initialize new position variable
         switch (args.Length)
         {
@@ -289,7 +290,7 @@ public class Teleport : Command
                 if ( // If the position input is invalid, ...
                     !Utils.ParsePosition(
                         position,
-                        GameNetworkManager.Instance.localPlayerController.transform.rotation, // Player rotation for ^
+                        GameNetworkManager.Instance.localPlayerController.transform.rotation, // Player rotation for local coordinates
                         args[0],
                         out newPosition // Automatically saves position to the correct variable
                     )
@@ -301,7 +302,7 @@ public class Teleport : Command
                 if ( // If the position input is invalid, ...
                     !Utils.ParsePosition(
                         position,
-                        GameNetworkManager.Instance.localPlayerController.transform.rotation, // Player rotation for ^
+                        GameNetworkManager.Instance.localPlayerController.transform.rotation, // Player rotation for local coordinates
                         args[0],
                         args[1],
                         args[2],
@@ -317,13 +318,21 @@ public class Teleport : Command
         }
         
         GameNetworkManager.Instance.localPlayerController.TeleportPlayer(newPosition); // Teleport player
-        GameNetworkManager.Instance.localPlayerController.isInsideFactory = Utils.IsInsideFactory( // Fix lighting
+        GameNetworkManager.Instance.localPlayerController.isInsideFactory = IsInsideFactory( // Fix lighting
             position
         );
         ChatCommandAPI.Print(
             $"Teleported to {newPosition} (distance:{Math.Round(Vector3.Distance(position, newPosition), 2)})"
         );
         return true;
+    }
+    
+    // Checks if position is inside the facility (for lighting)
+    private static bool IsInsideFactory(Vector3 position)
+    {
+        return Object
+            .FindObjectsOfType<OutOfBoundsTrigger>()
+            .Any(i => position.y < i.gameObject.transform.position.y);
     }
 }
 ```
