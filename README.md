@@ -234,11 +234,11 @@ public class ExamplePlayerCommand : Command
 
     public override bool Invoke(string[] args, Dictionary<string, string> kwargs, out string error)
     {
-        error = null; // Don't set error message like "Player not found", this error is reported by the GetPlayer function automatically
+        error = null; // Don't set error message like "Player not found", this error is set by the GetPlayer function automatically
         PlayerControllerB player = GameNetworkManager.Instance.localPlayerController;
         if (args.Length > 0)
             if (!Utils.GetPlayer(args[0], out error, out player))
-                return false; // Report failure, no error message, prevents further execution
+                return false; // Player not found, report error to user
         ChatCommandAPI.ChatCommandAPI.Print(
             player.isPlayerDead
                 ? $"Player {player.playerUsername} is dead."
