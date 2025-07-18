@@ -56,7 +56,7 @@ public class ExampleCommand : Command
 {
     public override bool Invoke(string[] args, Dictionary<string, string> kwargs, out string error)
     {
-        error = null!; // No error message
+        error = null; // No error message
         // Put your code here
         return true;
     }
@@ -234,7 +234,7 @@ public class ExamplePlayerCommand : Command
 
     public override bool Invoke(string[] args, Dictionary<string, string> kwargs, out string error)
     {
-        error = null!; // Don't set error message like "Player not found", this error is reported by the GetPlayer function automatically
+        error = null; // Don't set error message like "Player not found", this error is reported by the GetPlayer function automatically
         PlayerControllerB player = GameNetworkManager.Instance.localPlayerController;
         if (args.Length > 0)
             if (!Utils.GetPlayer(args[0], out error, out player))

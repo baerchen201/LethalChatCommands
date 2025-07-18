@@ -15,5 +15,9 @@ public abstract class Command
     public virtual string[]? Syntax => null;
     public virtual bool Hidden => false;
 
-    public abstract bool Invoke(string[] args, Dictionary<string, string> kwargs, out string error);
+    public abstract bool Invoke(
+        string[] args,
+        Dictionary<string, string> kwargs,
+        out string? error
+    );
 }

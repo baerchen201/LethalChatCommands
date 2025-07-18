@@ -28,6 +28,6 @@ public abstract class ServerCommand
         ref PlayerControllerB? caller,
         string[] args,
         Dictionary<string, string> kwargs,
-        out string error
+        out string? error
     );
 }
