@@ -141,7 +141,7 @@ using System.Linq;
 using GameNetcodeStuff;
 using UnityEngine;
 
-namespace ChatCommandAPI.BuiltinCommands;
+namespace ExampleMod;
 
 public class ShipLoot : ServerCommand
 {
@@ -260,7 +260,7 @@ using System.Linq;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace ChatCommandAPI.BuiltinCommands;
+namespace ExampleMod;
 
 public class Teleport : Command
 {
