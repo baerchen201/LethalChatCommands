@@ -10,6 +10,14 @@ public abstract class ServerCommand
         ChatCommandAPI.Instance.RegisterServerCommand(this);
     }
 
+    internal ServerCommand(bool builtIn = true)
+    {
+        if (builtIn)
+            ChatCommandAPI.Instance.RegisterBuiltInServerCommand(this);
+        else
+            ChatCommandAPI.Instance.RegisterServerCommand(this);
+    }
+
     public virtual string Name => GetType().Name;
     public virtual string[] Commands => [Name.ToLower()];
     public virtual string? Description => null;

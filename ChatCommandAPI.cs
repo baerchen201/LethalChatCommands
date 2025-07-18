@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -41,7 +42,11 @@ public class ChatCommandAPI : BaseUnityPlugin
     private ConfigEntry<string> serverCommandPrefix = null!;
     public string ServerCommandPrefix => serverCommandPrefix.Value;
     private List<ServerCommand> serverCommandList = null!;
-    public IReadOnlyList<ServerCommand> ServerCommandList => serverCommandList;
+    private List<ServerCommand> builtInServerCommandList = null!;
+    public IReadOnlyList<ServerCommand> ServerCommandList =>
+        builtInCommands.Value
+            ? builtInServerCommandList.Concat(serverCommandList).ToList()
+            : serverCommandList;
     private ConfigEntry<string> serverWelcomeMessage = null!;
     public string? ServerWelcomeMessage =>
         serverWelcomeMessage.Value.IsNullOrWhiteSpace()
@@ -96,9 +101,7 @@ public class ChatCommandAPI : BaseUnityPlugin
             Harmony ??= new Harmony(MyPluginInfo.PLUGIN_GUID);
 
             Logger.LogDebug("Patching...");
-
             Harmony.PatchAll();
-
             Logger.LogDebug("Finished patching!");
         }
     }
@@ -112,12 +115,10 @@ public class ChatCommandAPI : BaseUnityPlugin
         _ = new ErrorCommand();
 
         serverCommandList = [];
+        builtInServerCommandList = [];
         _ = new ServerHelp();
-        if (builtInCommands.Value)
-        {
-            _ = new ServerStatus();
-            _ = new ServerMods();
-        }
+        _ = new ServerStatus();
+        _ = new ServerMods();
     }
 
     public bool RegisterCommand(Command command)
@@ -133,6 +134,14 @@ public class ChatCommandAPI : BaseUnityPlugin
         if (serverCommandList.Any(i => i.GetType() == command.GetType()))
             return false;
         serverCommandList.Add(command);
+        return true;
+    }
+
+    public bool RegisterBuiltInServerCommand(ServerCommand command)
+    {
+        if (builtInServerCommandList.Any(i => i.GetType() == command.GetType()))
+            return false;
+        builtInServerCommandList.Add(command);
         return true;
     }
 
@@ -513,15 +522,13 @@ public class ChatCommandAPI : BaseUnityPlugin
                 return clientRpcParams;
 
             Logger.LogDebug($"Redirecting message to {targetClientId}");
-            clientRpcParams = default;
-            clientRpcParams.Send.TargetClientIds = [targetClientId.Value];
-            return clientRpcParams;
+            return new ClientRpcParams { Send = { TargetClientIds = [targetClientId.Value] } };
         }
     }
 
     internal static ulong? targetClientId;
 
-    [HarmonyPatch(typeof(StartOfRound), nameof(StartOfRound.OnClientConnect))]
+    [HarmonyPatch(typeof(StartOfRound), nameof(StartOfRound.SyncAlreadyHeldObjectsServerRpc))]
     internal class WelcomePatch
     {
         // ReSharper disable once UnusedMember.Local
@@ -533,13 +540,9 @@ public class ChatCommandAPI : BaseUnityPlugin
                     false,
                     new CodeMatch(
                         OpCodes.Call,
-                        AccessTools.Method(
-                            typeof(StartOfRound),
-                            nameof(StartOfRound.OnPlayerConnectedClientRpc)
-                        )
+                        AccessTools.Method(typeof(Debug), nameof(Debug.Log), [typeof(string)])
                     )
                 )
-                .Advance(1)
                 .Insert(
                     new CodeInstruction(OpCodes.Ldarg_1),
                     CodeInstruction.Call(typeof(WelcomePatch), nameof(a))
@@ -549,11 +552,12 @@ public class ChatCommandAPI : BaseUnityPlugin
         internal static void a(ulong clientId)
         {
             Logger.LogDebug(
-                $">> WelcomePatch({clientId}) ServerWelcomeMessage:{Instance.ServerWelcomeMessage ?? "null"} IsNullOrWhiteSpace:{Instance.ServerWelcomeMessage.IsNullOrWhiteSpace()}"
+                $">> WelcomePatch({clientId}) ServerWelcomeMessage:{Instance.ServerWelcomeMessage ?? "null"} IsNullOrWhiteSpace:{Instance.ServerWelcomeMessage.IsNullOrWhiteSpace()} serverCommandList.Count:{Instance.serverCommandList.Count}"
             );
             if (
                 Instance.ServerWelcomeMessage == null
                 || Instance.ServerWelcomeMessage.IsNullOrWhiteSpace()
+                || Instance.serverCommandList.All(i => i.Hidden)
             )
                 return;
 

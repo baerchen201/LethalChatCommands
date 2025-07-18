@@ -6,7 +6,7 @@ using HarmonyLib;
 
 namespace ChatCommandAPI.BuiltinCommands;
 
-public class ServerStatus : ServerCommand
+public class ServerStatus() : ServerCommand(true)
 {
     public override string Name => "Status";
     public override string Description => "Displays information about this server";

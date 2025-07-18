@@ -7,7 +7,7 @@ using HarmonyLib;
 
 namespace ChatCommandAPI.BuiltinCommands;
 
-public class ServerMods : ServerCommand
+public class ServerMods() : ServerCommand(true)
 {
     public override string Name => "ServerMods";
     public override string Description => "Shows a list of all mods installed on the server";
