@@ -2,7 +2,7 @@
   <!-- BepInEx Properties -->
   <PropertyGroup>
     <Title>ChatCommandsAPI</Title>
-    <Version>0.2.1</Version>
+    <Version>0.2.2</Version>
     <AssemblyName>baer1.ChatCommandAPI</AssemblyName>
     <Product>ChatCommandsAPI</Product>
     <Description>A Lethal Company modding API for easy creation of Minecraft-style Chat Commands</Description>
