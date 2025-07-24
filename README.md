@@ -54,7 +54,7 @@ namespace ExampleMod;
 
 public class ExampleCommand : Command
 {
-    public override bool Invoke(string[] args, Dictionary<string, string> kwargs, out string error)
+    public override bool Invoke(string[] args, Dictionary<string, string> kwargs, out string? error)
     {
         error = null; // No error message
         // Put your code here
@@ -102,7 +102,7 @@ public class ExampleCommand : Command
     public override string[] Syntax => ["", "[amount]"]; // All valid syntaxes for this command (only for help, not validated)
     public override bool Hidden => false; // Whether to hide this command from the help list (useful for debugging, default: false)
 
-    public override bool Invoke(string[] args, Dictionary<string, string> kwargs, out string error)
+    public override bool Invoke(string[] args, Dictionary<string, string> kwargs, out string? error)
     {
         error = "Invalid argument"; // Set error for return value false
         ushort amount = 1;
@@ -151,7 +151,7 @@ public class ShipLoot : ServerCommand
         ref PlayerControllerB? caller, // Player that sent the command (can be spoofed, this may be fixed in the future)
         string[] args,
         Dictionary<string, string> kwargs,
-        out string error
+        out string? error
     )
     {
         error = "caller is null"; // error message is not reported to anyone, but it is logged
@@ -232,7 +232,7 @@ public class ExamplePlayerCommand : Command
     public override string Description => "Shows if a player is dead"; // Command description
     public override string[] Syntax => ["[player]"];
 
-    public override bool Invoke(string[] args, Dictionary<string, string> kwargs, out string error)
+    public override bool Invoke(string[] args, Dictionary<string, string> kwargs, out string? error)
     {
         error = null; // Don't set error message like "Player not found", this error is set by the GetPlayer function automatically
         PlayerControllerB player = GameNetworkManager.Instance.localPlayerController;
@@ -271,7 +271,7 @@ public class Teleport : Command
 
     public override string[] Syntax => ["<x> <y> <z>", "<x,y,z>"]; // Simple syntax for position
 
-    public override bool Invoke(string[] args, Dictionary<string, string> kwargs, out string error)
+    public override bool Invoke(string[] args, Dictionary<string, string> kwargs, out string? error)
     {
         // Only allow this command when you are the only player (and host) in the game, to prevent cheating in multiplayer
         error = "You can only teleport in singleplayer";
