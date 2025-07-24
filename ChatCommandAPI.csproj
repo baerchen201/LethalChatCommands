@@ -7,7 +7,7 @@
     <Product>ChatCommandsAPI</Product>
     <Description>A Lethal Company modding API for easy creation of Minecraft-style Chat Commands</Description>
     <Authors>baer1</Authors>
-    <PackageTags>lethal;company;bepinex</PackageTags>
+    <PackageTags>lethal company;bepinex</PackageTags>
     <PackageIcon>icon.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
