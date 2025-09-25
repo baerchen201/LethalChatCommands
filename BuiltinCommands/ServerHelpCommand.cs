@@ -39,10 +39,10 @@ public class ServerHelp : ServerCommand
                         .Instance.ServerCommandList.Where(i => !i.Hidden)
                         .Select(i =>
                         {
-                            StringBuilder sb = new StringBuilder(
+                            var sb = new StringBuilder(
                                 $"{i.Name}{(i.Description == null ? "" : $" - {i.Description}")}\n"
                             );
-                            foreach (string usage in i.Syntax ?? [null!])
+                            foreach (var usage in i.Syntax ?? [null!])
                             {
                                 sb.Append(
                                     $"<color=#ffff00>{ChatCommandAPI.Instance.ServerCommandPrefix}{i.Commands[0]}{(usage.IsNullOrWhiteSpace() ? "" : " ")}</color><color=#dddd00><noparse>{usage}</noparse></color>\n"

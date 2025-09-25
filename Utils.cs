@@ -104,7 +104,7 @@ public static class Utils
     )
     {
         player = GameNetworkManager.Instance.localPlayerController;
-        PlayerControllerB? _player = GetPlayer(id, out error, strict);
+        var _player = GetPlayer(id, out error, strict);
         if (_player == null)
             return false;
         player = _player;
@@ -296,7 +296,7 @@ public static class Utils
         y = "0";
         z = "0";
 
-        Match match = new Regex("^(?:([^,]+),){2}([^,]+)$", RegexOptions.Multiline).Match(input);
+        var match = new Regex("^(?:([^,]+),){2}([^,]+)$", RegexOptions.Multiline).Match(input);
         if (!match.Success)
             return false;
         x = match.Groups[1].Captures[0].Value;
@@ -389,7 +389,7 @@ public static class Utils
     public static bool GetPlayer(string id, out PlayerControllerB player, bool strict = false)
     {
         player = GameNetworkManager.Instance.localPlayerController;
-        PlayerControllerB? _player = GetPlayer(id, strict);
+        var _player = GetPlayer(id, strict);
         if (_player == null)
             return false;
         player = _player;

@@ -1,9 +1,7 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -166,7 +164,7 @@ public class ChatCommandAPI : BaseUnityPlugin
         args = null!;
         kwargs = null!;
 
-        Match match = new Regex(
+        var match = new Regex(
             $"""(?:{Regex.Escape(CommandPrefix)}|{Regex.Escape(ServerCommandPrefix)})([a-z]+)(?: ([^ ="]+|(?:"[^"]*?")))*?(?: ([^ ="]+=[^ "]+|[^ ="]+="[^"]*?"))*\s*$""",
             RegexOptions.IgnoreCase | RegexOptions.Multiline
         ).Match(input);
@@ -268,7 +266,7 @@ public class ChatCommandAPI : BaseUnityPlugin
             ref InputAction.CallbackContext context
         )
         {
-            string text = __instance.chatTextField.text;
+            var text = __instance.chatTextField.text;
             if (!context.performed || text.IsNullOrWhiteSpace() || !Instance.IsCommand(text))
                 return true;
 
@@ -282,7 +280,7 @@ public class ChatCommandAPI : BaseUnityPlugin
 
             if (Instance.ParseCommand(text, out var command, out var args, out var kwargs))
             {
-                StringBuilder sb = new StringBuilder($"<< Parsed command: {command}(");
+                var sb = new StringBuilder($"<< Parsed command: {command}(");
                 if (args.Length > 0)
                 {
                     sb.Append(args.Join());
@@ -351,7 +349,7 @@ public class ChatCommandAPI : BaseUnityPlugin
 
             if (Instance.ParseCommand(chatMessage, out var command, out var args, out var kwargs))
             {
-                StringBuilder sb = new StringBuilder(
+                var sb = new StringBuilder(
                     $"<< Parsed command: {command}({(caller == null ? "null" : $"#{caller.playerClientId} {caller.playerUsername}")}{(args.Length > 0 || kwargs.Count > 0 ? ", " : "")}"
                 );
                 if (args.Length > 0)

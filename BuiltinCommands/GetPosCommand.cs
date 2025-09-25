@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using GameNetcodeStuff;
 
 namespace ChatCommandAPI.BuiltinCommands;
 
@@ -14,7 +13,7 @@ public class Position : Command
     {
         error = null!;
 
-        PlayerControllerB player = GameNetworkManager.Instance.localPlayerController;
+        var player = GameNetworkManager.Instance.localPlayerController;
         if (args.Length > 0)
             if (!Utils.GetPlayer(args[0], out player, out error))
                 return false;

@@ -48,7 +48,7 @@ public class StatusCommand : Command // Create command subclass
     {
         error = null!; // No error is expected, no need to set error string (exceptions are handled automatically)
 
-        StringBuilder sb = new StringBuilder("Current game: "); // Create StringBuilder, multiple chat messages are not recommended (they could get cut off because of the chat length limit, 4 messages in vanilla)
+        var sb = new StringBuilder("Current game: "); // Create StringBuilder, multiple chat messages are not recommended (they could get cut off because of the chat length limit, 4 messages in vanilla)
 
         // Display information about the lobby you're playing in
         var lobby = GameNetworkManager.Instance.currentLobby;
@@ -78,7 +78,7 @@ public class StatusCommand : Command // Create command subclass
         }
 
         // Display time you have spent in the current lobby
-        TimeSpan timePlaying = DateTime.Now - connectTime; // Get the time difference to the time you connected to the current game
+        var timePlaying = DateTime.Now - connectTime; // Get the time difference to the time you connected to the current game
         sb.Append(
             $"Time playing: {(int)timePlaying.TotalHours:D2}:{timePlaying.Minutes:D2}:{timePlaying.Seconds:D2}"
         );

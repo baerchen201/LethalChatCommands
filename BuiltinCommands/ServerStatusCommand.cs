@@ -22,7 +22,7 @@ public class ServerStatus() : ServerCommand(true)
         if (caller == null)
             return false;
 
-        StringBuilder sb = new StringBuilder("Current game: ");
+        var sb = new StringBuilder("Current game: ");
 
         var lobby = GameNetworkManager.Instance.currentLobby;
         sb.Append((lobby == null ? "unknown" : lobby.Value.GetData("name")) + "\n");
@@ -42,7 +42,7 @@ public class ServerStatus() : ServerCommand(true)
 
         if (startTime.Ticks > 0)
         {
-            TimeSpan timePlaying = DateTime.Now - startTime;
+            var timePlaying = DateTime.Now - startTime;
             sb.Append(
                 $"\nGame time: {(int)timePlaying.TotalHours:D2}:{timePlaying.Minutes:D2}:{timePlaying.Seconds:D2}"
             );
