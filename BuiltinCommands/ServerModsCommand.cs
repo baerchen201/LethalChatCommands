@@ -13,16 +13,13 @@ public class ServerMods() : ServerCommand(true)
     public override string Description => "Shows a list of all mods installed on the server";
 
     public override bool Invoke(
-        ref PlayerControllerB? caller,
+        ref PlayerControllerB caller,
         string[] args,
         Dictionary<string, string> kwargs,
-        out string error
+        out string? error
     )
     {
-        error = "caller is null";
-        if (caller == null)
-            return false;
-
+        error = null;
         ChatCommandAPI.Print(
             caller,
             $"Mods ({Chainloader.PluginInfos.Count}):\n"

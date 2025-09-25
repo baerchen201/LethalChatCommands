@@ -1,9 +1,7 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -36,7 +34,7 @@ public class ChatCommandAPI : BaseUnityPlugin
     public IReadOnlyList<Command> CommandList => commandList;
 
     private ConfigEntry<bool> enableServerMode = null!;
-    private ConfigEntry<bool> allowNullCaller = null!;
+    private ConfigEntry<bool> modCallerSelection = null!;
     private ConfigEntry<bool> builtInCommands = null!;
     public bool EnableServerMode => enableServerMode.Value;
     private ConfigEntry<string> serverCommandPrefix = null!;
@@ -71,11 +69,11 @@ public class ChatCommandAPI : BaseUnityPlugin
             "!",
             "Sever Command Prefix"
         );
-        allowNullCaller = Config.Bind(
+        modCallerSelection = Config.Bind(
             "Server",
-            "AllowNullCaller",
-            false,
-            "Whether to allow invalid players to run commands"
+            "ModCallerSelection",
+            true,
+            "Whether to use an improved, safer method of detecting which player ran a command or a more stable approach using vanilla functionality"
         );
         builtInCommands = Config.Bind(
             "Server",
@@ -225,7 +223,7 @@ public class ChatCommandAPI : BaseUnityPlugin
     }
 
     public bool RunCommand(
-        ref PlayerControllerB? caller,
+        ref PlayerControllerB caller,
         string command,
         string[] args,
         Dictionary<string, string> kwargs,
@@ -242,7 +240,7 @@ public class ChatCommandAPI : BaseUnityPlugin
                 return false;
             case > 1:
                 Logger.LogWarning(
-                    $"Server command {command} has multiple matches: {matches.Select(i => $"{i.Name} ({i.GetType().Assembly.FullName})").Join()}"
+                    $"Server command {command} has multiple matches: {matches.Select(i => $"{i.Name} ({i.GetType().AssemblyQualifiedName})").Join()}"
                 );
                 break;
         }
@@ -310,77 +308,126 @@ public class ChatCommandAPI : BaseUnityPlugin
     }
 
     [HarmonyPatch(typeof(HUDManager), nameof(HUDManager.AddPlayerChatMessageServerRpc))]
-    internal class ServerCommandPatch
+    internal class VanillaServerCommandPatch
     {
-        protected enum __RpcExecStage
-        {
-            None,
-            Server,
-            Client,
-        }
-
         // ReSharper disable once UnusedMember.Local
         private static bool Prefix(
             ref HUDManager __instance,
-            ref string chatMessage,
+            ref string? chatMessage,
             ref int playerId
         )
         {
             if (
-                Traverse.Create(__instance).Field("__rpc_exec_stage").GetValue<__RpcExecStage>()
-                    != __RpcExecStage.Server
+                Instance.modCallerSelection.Value
+                || chatMessage == null
                 || !(__instance.NetworkManager.IsServer || __instance.NetworkManager.IsHost)
                 || chatMessage.IsNullOrWhiteSpace()
                 || !Instance.IsServerCommand(chatMessage)
             )
                 return true;
 
-            Logger.LogInfo($">> Parsing server command by player {playerId}: {chatMessage}");
+            Logger.LogInfo(
+                $">> Parsing server command by player {playerId} (vanilla): {chatMessage}"
+            );
             PlayerControllerB? caller = null;
             if (playerId >= 0 && playerId < StartOfRound.Instance.allPlayerScripts.Length)
                 caller = StartOfRound.Instance.allPlayerScripts[playerId];
             Logger.LogDebug($"   caller: {(caller == null ? "null" : caller.playerUsername)}");
-            if (caller == null || !Utils.IsPlayerControlled(caller))
+            return InvokeServerCommand(ref caller, ref chatMessage, $"{playerId} (vanilla)");
+        }
+    }
+
+    [HarmonyPatch(typeof(HUDManager), "__rpc_handler_2930587515")] // Words can not describe how much I hate hardcoding names
+    internal class ModServerCommandPatch
+    {
+        private static IEnumerable<CodeInstruction> Transpiler(
+            IEnumerable<CodeInstruction> instructions,
+            ILGenerator generator
+        ) =>
+            new CodeMatcher(instructions, generator)
+                .MatchForward(
+                    false,
+                    new CodeMatch(
+                        OpCodes.Stfld,
+                        AccessTools.Field(typeof(HUDManager), "__RpcExecStage")
+                    )
+                )
+                .Advance(1)
+                .CreateLabel(out var label)
+                .Insert(
+                    new CodeInstruction(OpCodes.Ldarg_2),
+                    new CodeInstruction(OpCodes.Ldloc_1),
+                    new CodeInstruction(
+                        OpCodes.Call,
+                        AccessTools.Method(typeof(ModServerCommandPatch), nameof(a))
+                    ),
+                    new CodeInstruction(OpCodes.Brtrue, label),
+                    new CodeInstruction(OpCodes.Ret)
+                )
+                .InstructionEnumeration();
+
+        [SuppressMessage(
+            "Method Declaration",
+            "Harmony003:Harmony non-ref patch parameters modified"
+        )]
+        private static bool a(__RpcParams rpcParams, string? chatMessage)
+        {
+            if (!Instance.modCallerSelection.Value)
+                return true;
+
+            var playerId = rpcParams.Server.Receive.SenderClientId;
+            Logger.LogInfo($">> Parsing server command by player {playerId} (mod): {chatMessage}");
+            var caller = StartOfRound.Instance.allPlayerScripts.FirstOrDefault(i =>
+                i.actualClientId == playerId
+            );
+            Logger.LogDebug($"   caller: {(caller == null ? "null" : caller.playerUsername)}");
+            return InvokeServerCommand(ref caller, ref chatMessage, $"{playerId} (mod)");
+        }
+    }
+
+    private static bool InvokeServerCommand(
+        ref PlayerControllerB? caller,
+        ref string? chatMessage,
+        string playerId
+    )
+    {
+        if (caller == null || chatMessage == null || !Utils.IsPlayerControlled(caller))
+        {
+            Logger.LogWarning($"Server command sent by invalid player {playerId}: {chatMessage}");
+            return true;
+        }
+
+        if (Instance.ParseCommand(chatMessage, out var command, out var args, out var kwargs))
+        {
+            StringBuilder sb = new(
+                $"<< Parsed command: {command}(#{caller.playerClientId} {caller.playerUsername}{(args.Length > 0 || kwargs.Count > 0 ? ", " : "")}"
+            );
+            if (args.Length > 0)
             {
-                Logger.LogWarning(
-                    $"Server command sent by invalid player {playerId}: {chatMessage}"
-                );
-                if (!Instance.allowNullCaller.Value)
-                    return true;
+                sb.Append(args.Join());
+                if (kwargs.Count > 0)
+                    sb.Append(", ");
+            }
+            sb.Append(kwargs.Select(kvp => $"{kvp.Key}: {kvp.Value}").Join());
+            Logger.LogInfo(sb + ")");
+
+            if (!Instance.RunCommand(ref caller, command, args, kwargs, out var error))
+            {
+                Logger.LogWarning($"   Error running command: {error ?? "null"}");
+                if (caller != null && error != null)
+                    PrintError(
+                        caller,
+                        $"Error running command{(error.IsNullOrWhiteSpace() ? "" : $": <noparse>{error}</noparse>")}"
+                    );
             }
 
-            if (Instance.ParseCommand(chatMessage, out var command, out var args, out var kwargs))
-            {
-                StringBuilder sb = new StringBuilder(
-                    $"<< Parsed command: {command}({(caller == null ? "null" : $"#{caller.playerClientId} {caller.playerUsername}")}{(args.Length > 0 || kwargs.Count > 0 ? ", " : "")}"
-                );
-                if (args.Length > 0)
-                {
-                    sb.Append(args.Join());
-                    if (kwargs.Count > 0)
-                        sb.Append(", ");
-                }
-                sb.Append(kwargs.Select(kvp => $"{kvp.Key}: {kvp.Value}").Join());
-                Logger.LogInfo(sb + ")");
-
-                if (!Instance.RunCommand(ref caller, command, args, kwargs, out var error))
-                {
-                    Logger.LogWarning($"   Error running command: {error ?? "null"}");
-                    if (caller != null && error != null)
-                        PrintError(
-                            caller,
-                            $"Error running command{(error.IsNullOrWhiteSpace() ? "" : $": <noparse>{error}</noparse>")}"
-                        );
-                }
-
-                return false;
-            }
-
-            Logger.LogInfo("<< Invalid command");
-            if (caller != null)
-                PrintError(caller, "Invalid command");
             return false;
         }
+
+        Logger.LogInfo("<< Invalid command");
+        if (caller != null)
+            PrintError(caller, "Invalid command");
+        return false;
     }
 
     private static void UpdateChat()

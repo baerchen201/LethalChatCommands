@@ -12,16 +12,13 @@ public class ServerStatus() : ServerCommand(true)
     public override string Description => "Displays information about this server";
 
     public override bool Invoke(
-        ref PlayerControllerB? caller,
+        ref PlayerControllerB caller,
         string[] args,
         Dictionary<string, string> kwargs,
-        out string error
+        out string? error
     )
     {
-        error = "caller is null";
-        if (caller == null)
-            return false;
-
+        error = null;
         StringBuilder sb = new StringBuilder("Current game: ");
 
         var lobby = GameNetworkManager.Instance.currentLobby;

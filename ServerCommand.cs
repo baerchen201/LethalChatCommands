@@ -25,7 +25,7 @@ public abstract class ServerCommand
     public virtual bool Hidden => false;
 
     public abstract bool Invoke(
-        ref PlayerControllerB? caller,
+        ref PlayerControllerB caller,
         string[] args,
         Dictionary<string, string> kwargs,
         out string? error

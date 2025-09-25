@@ -13,16 +13,12 @@ public class ServerHelp : ServerCommand
     public override string Description => "Displays all available commands on the server";
 
     public override bool Invoke(
-        ref PlayerControllerB? caller,
+        ref PlayerControllerB caller,
         string[] args,
         Dictionary<string, string> kwargs,
-        out string error
+        out string? error
     )
     {
-        error = "caller is null";
-        if (caller == null)
-            return false;
-
         error = "This server has no available commands";
         if (
             ChatCommandAPI.Instance.ServerCommandList == null!
