@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 using System.Text;
 using BepInEx;
 using BepInEx.Logging;
 using ChatCommandAPI;
 using HarmonyLib;
 using Unity.Netcode;
+using Vector3 = UnityEngine.Vector3;
 
 namespace ExampleMod;
 
@@ -23,6 +25,7 @@ public class ExampleMod : BaseUnityPlugin
         Patch();
 
         _ = new StatusCommand(); // Initialize command once to register it
+        _ = new KillCommand();
 
         Logger.LogInfo($"{MyPluginInfo.PLUGIN_GUID} v{MyPluginInfo.PLUGIN_VERSION} has loaded!");
     }
@@ -100,6 +103,47 @@ public class StatusCommand : Command // Create command subclass
         {
             if (__result) // If connected successfully
                 connectTime = DateTime.Now; // Set connect time to current time
+        }
+    }
+}
+
+// Command confirmation
+public class KillCommand : Command
+{
+    public override string Name => "Kill";
+    public override string Description => "Kills the local player";
+
+    public override bool Invoke(string[] args, Dictionary<string, string> kwargs, out string error)
+    {
+        const string ALREADY_DEAD = "You are already dead";
+        error = ALREADY_DEAD;
+
+        if (IsLocalPlayerDead())
+            return false;
+
+        ChatCommandAPI.ChatCommandAPI.AskConfirm("killing yourself", CallbackFunc); // Ask user to confirm
+        ChatCommandAPI.ChatCommandAPI.Print("Please confirm: /confirm|deny"); // Inform user that they need to confirm
+        return true;
+
+        bool IsLocalPlayerDead() =>
+            !Utils.IsPlayerControlled(GameNetworkManager.Instance.localPlayerController);
+
+        void CallbackFunc(bool confirmed)
+        {
+            if (!confirmed) // Check if user cancelled
+            {
+                ChatCommandAPI.ChatCommandAPI.PrintError("Cancelled");
+                return;
+            }
+
+            // User confirmed, continue execution
+            if (IsLocalPlayerDead())
+            {
+                ChatCommandAPI.ChatCommandAPI.PrintCommandError(ALREADY_DEAD);
+                return;
+            }
+
+            GameNetworkManager.Instance.localPlayerController.KillPlayer(Vector3.zero);
         }
     }
 }

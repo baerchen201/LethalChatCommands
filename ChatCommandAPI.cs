@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection.Emit;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
@@ -110,6 +111,8 @@ public class ChatCommandAPI : BaseUnityPlugin
         _ = new Help();
         _ = new Position();
         _ = new PlayerList();
+        _ = new Confirm();
+        _ = new Deny();
         _ = new ErrorCommand();
 
         serverCommandList = [];
@@ -257,6 +260,34 @@ public class ChatCommandAPI : BaseUnityPlugin
         }
     }
 
+    internal struct ConfirmationRequest
+    {
+        public string? action;
+        public Action<bool> callback;
+    }
+
+    internal static ConfirmationRequest? confirmationRequest;
+
+    public static void AskConfirm(string action, Action<bool> callback) =>
+        confirmationRequest = new ConfirmationRequest { action = action, callback = callback };
+
+    public static void AskConfirm(Action<bool> callback) =>
+        confirmationRequest = new ConfirmationRequest { callback = callback };
+
+    public static Task<bool> AskConfirmAsync(string action)
+    {
+        var tcs = new TaskCompletionSource<bool>();
+        confirmationRequest = new ConfirmationRequest { action = action, callback = tcs.SetResult };
+        return tcs.Task;
+    }
+
+    public static Task<bool> AskConfirmAsync()
+    {
+        var tcs = new TaskCompletionSource<bool>();
+        confirmationRequest = new ConfirmationRequest { callback = tcs.SetResult };
+        return tcs.Task;
+    }
+
     [HarmonyPatch(typeof(HUDManager), nameof(HUDManager.SubmitChat_performed))]
     internal class ChatCommandPatch
     {
@@ -294,9 +325,7 @@ public class ChatCommandAPI : BaseUnityPlugin
                 {
                     Logger.LogWarning($"   Error running command: {(error ?? "null")}");
                     if (error != null)
-                        PrintError(
-                            $"Error running command{(error.IsNullOrWhiteSpace() ? "" : $": <noparse>{error}</noparse>")}"
-                        );
+                        PrintCommandError(error);
                 }
                 return false;
             }
@@ -365,10 +394,7 @@ public class ChatCommandAPI : BaseUnityPlugin
                 {
                     Logger.LogWarning($"   Error running command: {error ?? "null"}");
                     if (caller != null && error != null)
-                        PrintError(
-                            caller,
-                            $"Error running command{(error.IsNullOrWhiteSpace() ? "" : $": <noparse>{error}</noparse>")}"
-                        );
+                        PrintCommandError(caller, error);
                 }
 
                 return false;
@@ -439,6 +465,13 @@ public class ChatCommandAPI : BaseUnityPlugin
         UpdateChat();
     }
 
+    public static void PrintCommandError(string? error)
+    {
+        PrintError(
+            $"Error running command{(error.IsNullOrWhiteSpace() ? "" : $": <noparse>{error}</noparse>")}"
+        );
+    }
+
     public static void Print(PlayerControllerB caller, string text)
     {
         SendToPlayer($"<color=#00ffff>{text}</color>", caller.actualClientId);
@@ -482,6 +515,14 @@ public class ChatCommandAPI : BaseUnityPlugin
     public static void PrintError(PlayerControllerB caller, string text)
     {
         SendToPlayer($"<color=#ff0000>{text}</color>", caller.actualClientId);
+    }
+
+    public static void PrintCommandError(PlayerControllerB caller, string? error)
+    {
+        PrintError(
+            caller,
+            $"Error running command{(error.IsNullOrWhiteSpace() ? "" : $": <noparse>{error}</noparse>")}"
+        );
     }
 
     private static void SendToPlayer(string text, ulong clientId)
