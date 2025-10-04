@@ -37,7 +37,7 @@ public class ServerStatus() : ServerCommand(true)
             sb.Append($" #{player.playerClientId} {player.playerUsername}");
             if (player.isHostPlayerObject)
                 sb.Append(" (HOST)");
-            sb.Append(player.isPlayerDead ? "</color>" : "");
+            sb.Append(player.isPlayerDead ? "</color>\n" : "\n");
         }
 
         if (startTime.Ticks > 0)
