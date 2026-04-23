@@ -10,5 +10,6 @@ internal static class GameNetworkManager_StartHost
     private static void Postfix()
     {
         ServerStatus.startTime = DateTime.Now;
+        ChatCommandAPI.confirmationRequests.Clear();
     }
 }

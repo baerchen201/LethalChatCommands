@@ -18,6 +18,7 @@ namespace ChatCommandAPI;
 public class ChatCommandAPI : BaseUnityPlugin
 {
     internal static ConfirmationRequest? confirmationRequest;
+    internal static Dictionary<ulong, ConfirmationRequest> confirmationRequests;
 
     internal static ulong? targetClientId;
     internal ConfigEntry<bool> allowNullCaller = null!;
@@ -95,7 +96,6 @@ public class ChatCommandAPI : BaseUnityPlugin
         void Patch()
         {
             Harmony ??= new Harmony(MyPluginInfo.PLUGIN_GUID);
-
             Logger.LogDebug("Patching...");
             Harmony.PatchAll();
             Logger.LogDebug("Finished patching!");
@@ -117,6 +117,8 @@ public class ChatCommandAPI : BaseUnityPlugin
         _ = new ServerHelp();
         _ = new ServerStatus();
         _ = new ServerMods();
+        _ = new ServerConfirm();
+        _ = new ServerDeny();
     }
 
     public bool RegisterCommand(Command command)
@@ -274,6 +276,44 @@ public class ChatCommandAPI : BaseUnityPlugin
     {
         var tcs = new TaskCompletionSource<bool>();
         confirmationRequest = new ConfirmationRequest { callback = tcs.SetResult };
+        return tcs.Task;
+    }
+
+    public static void AskConfirm(PlayerControllerB caller, string action, Action<bool> callback)
+    {
+        confirmationRequests[caller.actualClientId] = new ConfirmationRequest
+        {
+            action = action,
+            callback = callback,
+        };
+    }
+
+    public static void AskConfirm(PlayerControllerB caller, Action<bool> callback)
+    {
+        confirmationRequests[caller.actualClientId] = new ConfirmationRequest
+        {
+            callback = callback,
+        };
+    }
+
+    public static Task<bool> AskConfirmAsync(PlayerControllerB caller, string action)
+    {
+        var tcs = new TaskCompletionSource<bool>();
+        confirmationRequests[caller.actualClientId] = new ConfirmationRequest
+        {
+            action = action,
+            callback = tcs.SetResult,
+        };
+        return tcs.Task;
+    }
+
+    public static Task<bool> AskConfirmAsync(PlayerControllerB caller)
+    {
+        var tcs = new TaskCompletionSource<bool>();
+        confirmationRequests[caller.actualClientId] = new ConfirmationRequest
+        {
+            callback = tcs.SetResult,
+        };
         return tcs.Task;
     }
 
