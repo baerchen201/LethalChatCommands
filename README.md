@@ -2,9 +2,11 @@
 
 **There may be major breaking changes before the first full release.**
 
-If you encounter any issues while playing or creating a mod with this API, please [report them on GitHub](https://github.com/baerchen201/LethalChatCommands/issues).
+If you encounter any issues while playing or creating a mod with this API,
+please [report them on GitHub](https://github.com/baerchen201/LethalChatCommands/issues).
 
-This mod is open-source, you can contribute to it by [opening a pull request](https://github.com/baerchen201/LethalChatCommands/pulls)
+This mod is open-source, you can contribute to it
+by [opening a pull request](https://github.com/baerchen201/LethalChatCommands/pulls)
 
 ## Getting started
 
@@ -16,7 +18,8 @@ Simply run `dotnet add package baer1.ChatCommandAPI` or add the following line t
 <PackageReference Include="baer1.ChatCommandAPI" Version="0.2.*"/>
 ```
 
-Additionally, you should reference this mod in both your main plugin class and your manifest.json \(replace `<VERSION>` with the actual version you are using\):
+Additionally, you should reference this mod in both your main plugin class and your manifest.json \(replace `<VERSION>`
+with the actual version you are using\):
 
 ```csharp
 ...
@@ -25,6 +28,7 @@ Additionally, you should reference this mod in both your main plugin class and y
 public class ExampleMod : BaseUnityPlugin
 ...
 ```
+
 ```json
 ...
 "dependencies": [
@@ -46,6 +50,7 @@ You can run this command through the in-game chat. \(See [below](#customizing-th
 This mod is case-insensitive \(`/eXaMpLeCoMmAnD` is valid\)
 
 Example:
+
 ```csharp
 using System.Collections.Generic;
 using ChatCommandAPI;
@@ -79,7 +84,8 @@ public class ChatCommandAPI : BaseUnityPlugin
 
 ### 4. Done!
 
-You can now use the command `/examplecommand` in-game to run the function defined in [Step 2](#2-create-command-subclass)
+You can now use the command `/examplecommand` in-game to run the function defined
+in [Step 2](#2-create-command-subclass)
 
 ## Advanced usage
 
@@ -180,7 +186,8 @@ public class ShipLoot : ServerCommand
 
 ### Using ToggleCommand
 
-If you are creating a command that is supposed to act as a toggle (on or off), you can use the `ToggleCommand` class to make this easier.
+If you are creating a command that is supposed to act as a toggle (on or off), you can use the `ToggleCommand` class to
+make this easier.
 
 You can override the `Value` property to access it externally or in harmony patches:
 
@@ -316,7 +323,7 @@ public class Teleport : Command
                 error = "Invalid arguments";
                 return false;
         }
-        
+
         GameNetworkManager.Instance.localPlayerController.TeleportPlayer(newPosition); // Teleport player
         GameNetworkManager.Instance.localPlayerController.isInsideFactory = IsInsideFactory( // Fix lighting
             position
@@ -326,7 +333,7 @@ public class Teleport : Command
         );
         return true;
     }
-    
+
     // Checks if position is inside the facility (for lighting)
     private static bool IsInsideFactory(Vector3 position)
     {

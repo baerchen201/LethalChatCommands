@@ -1,10 +1,9 @@
 ---
 name: Feature request
 about: Suggest an addition to this mod
-title: ''
+title: ""
 labels: enhancement
-assignees: ''
-
+assignees: ""
 ---
 
 **Is your feature request related to a problem? Please describe.**

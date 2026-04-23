@@ -1,10 +1,9 @@
 ---
 name: Bug report
 about: Report an issue with this mod
-title: ''
+title: ""
 labels: bug
-assignees: ''
-
+assignees: ""
 ---
 
 **Describe the bug**
@@ -12,6 +11,7 @@ A clear and concise description of what the bug is.
 
 **To Reproduce**
 Steps to reproduce the behavior:
+
 1. Set value '....'
 2. Call function '.....'
 3. Do '....'
@@ -24,9 +24,10 @@ A clear and concise description of what you expected to happen.
 If applicable, add a short code snippet to help explain your problem.
 
 **Desktop (please complete the following information):**
- - OS or Compatibility Layer (if applicable): [e.g. Windows 10]
- - Game version [e.g. v69]
- - Mod Version [e.g. 0.1.1]
+
+- OS or Compatibility Layer (if applicable): [e.g. Windows 10]
+- Game version [e.g. v69]
+- Mod Version [e.g. 0.1.1]
 
 **Additional context**
 Add any other context about the issue here.

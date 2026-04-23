@@ -5,16 +5,16 @@ using GameNetcodeStuff;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-// ReSharper disable UnusedMember.Global
-
 namespace ChatCommandAPI;
 
 public static class Utils
 {
-    public static bool IsPlayerControlled(PlayerControllerB? player) =>
-        player != null
-        && player is { disconnectedMidGame: false, isTestingPlayer: false }
-        && (player.isPlayerControlled || player.isPlayerDead);
+    public static bool IsPlayerControlled(PlayerControllerB? player)
+    {
+        return player != null
+            && player is { disconnectedMidGame: false, isTestingPlayer: false }
+            && (player.isPlayerControlled || player.isPlayerDead);
+    }
 
     public static PlayerControllerB? GetPlayer(string id, out string error, bool strict = false)
     {
@@ -87,8 +87,10 @@ public static class Utils
                 error = "Multiple players match";
                 return null;
             }
+
             ChatCommandAPI.PrintWarning("Multiple players match, selecting first...");
         }
+
         if (players.Length > 0)
             return players[0];
 
@@ -161,7 +163,9 @@ public static class Utils
             xf += origin.x;
         }
         else if (!float.TryParse(x, out xf))
+        {
             return null;
+        }
 
         if (y.StartsWith('~'))
         {
@@ -171,7 +175,9 @@ public static class Utils
             yf += origin.y;
         }
         else if (!float.TryParse(y, out yf))
+        {
             return null;
+        }
 
         if (z.StartsWith('~'))
         {
@@ -181,7 +187,9 @@ public static class Utils
             zf += origin.z;
         }
         else if (!float.TryParse(z, out zf))
+        {
             return null;
+        }
 
         return new Vector3(xf, yf, zf);
     }
@@ -244,20 +252,26 @@ public static class Utils
         return true;
     }
 
-    public static Vector3? ParsePosition(Vector3 origin, Quaternion rotation, string input) =>
-        !ParseSingleCommaSeparatedPositionString(input, out var x, out var y, out var z)
+    public static Vector3? ParsePosition(Vector3 origin, Quaternion rotation, string input)
+    {
+        return !ParseSingleCommaSeparatedPositionString(input, out var x, out var y, out var z)
             ? null
             : ParsePosition(origin, rotation, x, y, z);
+    }
 
-    public static Vector3? ParsePosition(Vector3 origin, string input) =>
-        !ParseSingleCommaSeparatedPositionString(input, out var x, out var y, out var z)
+    public static Vector3? ParsePosition(Vector3 origin, string input)
+    {
+        return !ParseSingleCommaSeparatedPositionString(input, out var x, out var y, out var z)
             ? null
             : ParsePosition(origin, x, y, z);
+    }
 
-    public static Vector3? ParsePosition(string input) =>
-        !ParseSingleCommaSeparatedPositionString(input, out var x, out var y, out var z)
+    public static Vector3? ParsePosition(string input)
+    {
+        return !ParseSingleCommaSeparatedPositionString(input, out var x, out var y, out var z)
             ? null
             : ParsePosition(x, y, z);
+    }
 
     public static bool ParsePosition(
         Vector3 origin,

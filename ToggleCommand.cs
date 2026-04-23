@@ -5,8 +5,10 @@ namespace ChatCommandAPI;
 public abstract class ToggleCommand : Command
 {
     public virtual string? ToggleDescription => null;
+
     public sealed override string Description =>
         ToggleDescription == null ? ValueString : $"{ToggleDescription} - {ValueString}";
+
     public sealed override string[] Syntax => ["", "{ on | off }"];
 
     public virtual string EnabledString => "enabled";
@@ -15,7 +17,10 @@ public abstract class ToggleCommand : Command
     public virtual bool Value { get; set; }
     public virtual string ValueString => Value ? EnabledString : DisabledString;
 
-    public virtual void PrintValue() => ChatCommandAPI.Print($"{Name} {ValueString}");
+    public virtual void PrintValue()
+    {
+        ChatCommandAPI.Print($"{Name} {ValueString}");
+    }
 
     public override bool Invoke(string[] args, Dictionary<string, string> kwargs, out string error)
     {
@@ -36,6 +41,7 @@ public abstract class ToggleCommand : Command
                 default:
                     return false;
             }
+
         PrintValue();
         return true;
     }

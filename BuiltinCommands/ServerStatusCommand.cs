@@ -8,6 +8,7 @@ namespace ChatCommandAPI.BuiltinCommands;
 
 public class ServerStatus() : ServerCommand(true)
 {
+    private static DateTime startTime = new(0);
     public override string Name => "Status";
     public override string Description => "Displays information about this server";
 
@@ -52,12 +53,12 @@ public class ServerStatus() : ServerCommand(true)
         return true;
     }
 
-    private static DateTime startTime = new(0);
-
     [HarmonyPatch(typeof(GameNetworkManager), nameof(GameNetworkManager.StartHost))]
     internal class StartPatch
     {
-        // ReSharper disable once UnusedMember.Local
-        private static void Postfix() => startTime = DateTime.Now;
+        private static void Postfix()
+        {
+            startTime = DateTime.Now;
+        }
     }
 }

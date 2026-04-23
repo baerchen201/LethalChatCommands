@@ -43,11 +43,9 @@ public class ServerHelp : ServerCommand
                                 $"{i.Name}{(i.Description == null ? "" : $" - {i.Description}")}\n"
                             );
                             foreach (var usage in i.Syntax ?? [null!])
-                            {
                                 sb.Append(
                                     $"<color=#ffff00>{ChatCommandAPI.Instance.ServerCommandPrefix}{i.Commands[0]}{(usage.IsNullOrWhiteSpace() ? "" : " ")}</color><color=#dddd00><noparse>{usage}</noparse></color>\n"
                                 );
-                            }
 
                             return sb.ToString();
                         })
