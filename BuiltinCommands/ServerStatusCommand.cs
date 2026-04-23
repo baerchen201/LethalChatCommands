@@ -2,13 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using GameNetcodeStuff;
-using HarmonyLib;
 
 namespace ChatCommandAPI.BuiltinCommands;
 
 public class ServerStatus() : ServerCommand(true)
 {
-    private static DateTime startTime = new(0);
+    internal static DateTime startTime = new(0);
     public override string Name => "Status";
     public override string Description => "Displays information about this server";
 
@@ -51,14 +50,5 @@ public class ServerStatus() : ServerCommand(true)
 
         ChatCommandAPI.Print(caller, sb.ToString());
         return true;
-    }
-
-    [HarmonyPatch(typeof(GameNetworkManager), nameof(GameNetworkManager.StartHost))]
-    internal class StartPatch
-    {
-        private static void Postfix()
-        {
-            startTime = DateTime.Now;
-        }
     }
 }

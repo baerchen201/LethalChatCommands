@@ -1,9 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Reflection.Emit;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using BepInEx;
@@ -12,10 +9,7 @@ using BepInEx.Logging;
 using ChatCommandAPI.BuiltinCommands;
 using GameNetcodeStuff;
 using HarmonyLib;
-using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.EventSystems;
-using UnityEngine.InputSystem;
 using Position = ChatCommandAPI.BuiltinCommands.Position;
 
 namespace ChatCommandAPI;
@@ -26,15 +20,15 @@ public class ChatCommandAPI : BaseUnityPlugin
     internal static ConfirmationRequest? confirmationRequest;
 
     internal static ulong? targetClientId;
-    private ConfigEntry<bool> allowNullCaller = null!;
-    private ConfigEntry<bool> builtInCommands = null!;
+    internal ConfigEntry<bool> allowNullCaller = null!;
+    internal ConfigEntry<bool> builtInCommands = null!;
     private List<ServerCommand> builtInServerCommandList = null!;
     private List<Command> commandList = null!;
 
     private ConfigEntry<string> commandPrefix = null!;
 
     private ConfigEntry<bool> enableServerMode = null!;
-    private List<ServerCommand> serverCommandList = null!;
+    internal List<ServerCommand> serverCommandList = null!;
     private ConfigEntry<string> serverCommandPrefix = null!;
     private ConfigEntry<string> serverWelcomeMessage = null!;
     public static ChatCommandAPI Instance { get; private set; } = null!;
@@ -412,193 +406,5 @@ public class ChatCommandAPI : BaseUnityPlugin
     {
         public string? action;
         public Action<bool> callback;
-    }
-
-    [HarmonyPatch(typeof(HUDManager), nameof(HUDManager.SubmitChat_performed))]
-    internal class ChatCommandPatch
-    {
-        private static bool Prefix(
-            ref HUDManager __instance,
-            ref InputAction.CallbackContext context
-        )
-        {
-            var text = __instance.chatTextField.text;
-            if (!context.performed || text.IsNullOrWhiteSpace() || !Instance.IsCommand(text))
-                return true;
-
-            __instance.localPlayer.isTypingChat = false;
-            __instance.chatTextField.text = "";
-            EventSystem.current.SetSelectedGameObject(null);
-            __instance.PingHUDElement(__instance.Chat);
-            __instance.typingIndicator.enabled = false;
-
-            Logger.LogInfo($">> Parsing command: {text}");
-
-            if (Instance.ParseCommand(text, out var command, out var args, out var kwargs))
-            {
-                var sb = new StringBuilder($"<< Parsed command: {command}(");
-                if (args.Length > 0)
-                {
-                    sb.Append(args.Join());
-                    if (kwargs.Count > 0)
-                        sb.Append(", ");
-                }
-
-                sb.Append(kwargs.Select(kvp => $"{kvp.Key}: {kvp.Value}").Join());
-                Logger.LogInfo(sb + ")");
-
-                if (!Instance.RunCommand(command, args, kwargs, out var error))
-                {
-                    Logger.LogWarning($"   Error running command: {error ?? "null"}");
-                    if (error != null)
-                        PrintCommandError(error);
-                }
-
-                return false;
-            }
-
-            Logger.LogInfo("<< Invalid command");
-            PrintError("Invalid command");
-            return false;
-        }
-    }
-
-    [HarmonyPatch(typeof(HUDManager), nameof(HUDManager.AddPlayerChatMessageServerRpc))]
-    internal class ServerCommandPatch
-    {
-        private static bool Prefix(
-            ref HUDManager __instance,
-            ref string chatMessage,
-            ref int playerId
-        )
-        {
-            if (
-                __instance.__rpc_exec_stage != NetworkBehaviour.__RpcExecStage.Execute
-                || !(__instance.NetworkManager.IsServer || __instance.NetworkManager.IsHost)
-                || chatMessage.IsNullOrWhiteSpace()
-                || !Instance.IsServerCommand(chatMessage)
-            )
-                return true;
-
-            Logger.LogInfo($">> Parsing server command by player {playerId}: {chatMessage}");
-            PlayerControllerB? caller = null;
-            if (playerId >= 0 && playerId < StartOfRound.Instance.allPlayerScripts.Length)
-                caller = StartOfRound.Instance.allPlayerScripts[playerId];
-            Logger.LogDebug($"   caller: {(caller == null ? "null" : caller.playerUsername)}");
-            if (caller == null || !Utils.IsPlayerControlled(caller))
-            {
-                Logger.LogWarning(
-                    $"Server command sent by invalid player {playerId}: {chatMessage}"
-                );
-                if (!Instance.allowNullCaller.Value)
-                    return true;
-            }
-
-            if (Instance.ParseCommand(chatMessage, out var command, out var args, out var kwargs))
-            {
-                var sb = new StringBuilder(
-                    $"<< Parsed command: {command}({(caller == null ? "null" : $"#{caller.playerClientId} {caller.playerUsername}")}{(args.Length > 0 || kwargs.Count > 0 ? ", " : "")}"
-                );
-                if (args.Length > 0)
-                {
-                    sb.Append(args.Join());
-                    if (kwargs.Count > 0)
-                        sb.Append(", ");
-                }
-
-                sb.Append(kwargs.Select(kvp => $"{kvp.Key}: {kvp.Value}").Join());
-                Logger.LogInfo(sb + ")");
-
-                if (!Instance.RunCommand(ref caller, command, args, kwargs, out var error))
-                {
-                    Logger.LogWarning($"   Error running command: {error ?? "null"}");
-                    if (caller != null && error != null)
-                        PrintCommandError(caller, error);
-                }
-
-                return false;
-            }
-
-            Logger.LogInfo("<< Invalid command");
-            if (caller != null)
-                PrintError(caller, "Invalid command");
-            return false;
-        }
-    }
-
-    [HarmonyPatch(typeof(HUDManager), nameof(HUDManager.AddTextMessageClientRpc))]
-    internal class SendChatPatch
-    {
-        private static IEnumerable<CodeInstruction> Transpiler(
-            IEnumerable<CodeInstruction> instructions
-        )
-        {
-            return new CodeMatcher(instructions)
-                .MatchForward(
-                    false,
-                    new CodeMatch(
-                        OpCodes.Call,
-                        AccessTools.Method(typeof(NetworkBehaviour), "__endSendClientRpc")
-                    )
-                )
-                .Advance(-1)
-                .Insert(CodeInstruction.Call(typeof(SendChatPatch), nameof(a)))
-                .InstructionEnumeration();
-        }
-
-        [SuppressMessage(
-            "Method Declaration",
-            "Harmony003:Harmony non-ref patch parameters modified"
-        )]
-        public static ClientRpcParams a(ClientRpcParams clientRpcParams)
-        {
-            if (targetClientId == null)
-                return clientRpcParams;
-
-            Logger.LogDebug($"Redirecting message to {targetClientId}");
-            return new ClientRpcParams { Send = { TargetClientIds = [targetClientId.Value] } };
-        }
-    }
-
-    [HarmonyPatch(typeof(StartOfRound), nameof(StartOfRound.SyncAlreadyHeldObjectsServerRpc))]
-    internal class WelcomePatch
-    {
-        private static IEnumerable<CodeInstruction> Transpiler(
-            IEnumerable<CodeInstruction> instructions
-        )
-        {
-            return new CodeMatcher(instructions)
-                .MatchForward(
-                    false,
-                    new CodeMatch(
-                        OpCodes.Call,
-                        AccessTools.Method(typeof(Debug), nameof(Debug.Log), [typeof(string)])
-                    )
-                )
-                .Insert(
-                    new CodeInstruction(OpCodes.Ldarg_1),
-                    CodeInstruction.Call(typeof(WelcomePatch), nameof(a))
-                )
-                .InstructionEnumeration();
-        }
-
-        internal static void a(ulong clientId)
-        {
-            Logger.LogDebug(
-                $">> WelcomePatch({clientId}) ServerWelcomeMessage:{Instance.ServerWelcomeMessage ?? "null"} IsNullOrWhiteSpace:{Instance.ServerWelcomeMessage.IsNullOrWhiteSpace()} serverCommandList.Count:{Instance.serverCommandList.Count}"
-            );
-            if (
-                Instance.ServerWelcomeMessage == null
-                || Instance.ServerWelcomeMessage.IsNullOrWhiteSpace()
-                || Instance.serverCommandList.All(i => i.Hidden)
-            )
-                return;
-
-            targetClientId = clientId;
-            HUDManager.Instance.AddTextMessageClientRpc(
-                $"<color=#7069ff>{Instance.ServerWelcomeMessage}</color>"
-            );
-            targetClientId = null;
-        }
     }
 }
