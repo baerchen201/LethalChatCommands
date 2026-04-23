@@ -16,10 +16,10 @@ public class ServerConfirm() : ServerCommand(true)
     public override bool Hidden => ChatCommandAPI.confirmationRequest == null;
 
     public override bool Invoke(
-        ref PlayerControllerB? caller,
+        PlayerControllerB caller,
         string[] args,
         Dictionary<string, string> kwargs,
-        out string error
+        out string? error
     )
     {
         error = "No action currently needs confirmation";

@@ -21,7 +21,6 @@ public class ChatCommandAPI : BaseUnityPlugin
     internal static Dictionary<ulong, ConfirmationRequest> confirmationRequests;
 
     internal static ulong? targetClientId;
-    internal ConfigEntry<bool> allowNullCaller = null!;
     internal ConfigEntry<bool> builtInCommands = null!;
     private List<ServerCommand> builtInServerCommandList = null!;
     private List<Command> commandList = null!;
@@ -67,12 +66,6 @@ public class ChatCommandAPI : BaseUnityPlugin
             "ServerCommandPrefix",
             "!",
             "Sever Command Prefix"
-        );
-        allowNullCaller = Config.Bind(
-            "Server",
-            "AllowNullCaller",
-            false,
-            "Whether to allow invalid players to run commands"
         );
         builtInCommands = Config.Bind(
             "Server",
@@ -221,7 +214,7 @@ public class ChatCommandAPI : BaseUnityPlugin
     }
 
     public bool RunCommand(
-        ref PlayerControllerB? caller,
+        PlayerControllerB caller,
         string command,
         string[] args,
         Dictionary<string, string> kwargs,
@@ -245,7 +238,7 @@ public class ChatCommandAPI : BaseUnityPlugin
 
         try
         {
-            return matches[0].Invoke(ref caller, args, kwargs, out error);
+            return matches[0].Invoke(caller, args, kwargs, out error);
         }
         catch (Exception e)
         {

@@ -23,7 +23,7 @@ internal static class HUDManager_AddPlayerChatMessageServerRpc
         ChatCommandAPI.Logger.LogInfo(
             $">> Parsing server command by player {playerId}: {chatMessage}"
         );
-        PlayerControllerB? caller = null;
+        PlayerControllerB caller = null!;
         if (playerId >= 0 && playerId < StartOfRound.Instance.allPlayerScripts.Length)
             caller = StartOfRound.Instance.allPlayerScripts[playerId];
         ChatCommandAPI.Logger.LogDebug(
@@ -34,8 +34,7 @@ internal static class HUDManager_AddPlayerChatMessageServerRpc
             ChatCommandAPI.Logger.LogWarning(
                 $"Server command sent by invalid player {playerId}: {chatMessage}"
             );
-            if (!ChatCommandAPI.Instance.allowNullCaller.Value)
-                return true;
+            return true;
         }
 
         if (
@@ -60,15 +59,7 @@ internal static class HUDManager_AddPlayerChatMessageServerRpc
             sb.Append(kwargs.Select(kvp => $"{kvp.Key}: {kvp.Value}").Join());
             ChatCommandAPI.Logger.LogInfo(sb + ")");
 
-            if (
-                !ChatCommandAPI.Instance.RunCommand(
-                    ref caller,
-                    command,
-                    args,
-                    kwargs,
-                    out var error
-                )
-            )
+            if (!ChatCommandAPI.Instance.RunCommand(caller!, command, args, kwargs, out var error))
             {
                 ChatCommandAPI.Logger.LogWarning($"   Error running command: {error ?? "null"}");
                 if (caller != null && error != null)

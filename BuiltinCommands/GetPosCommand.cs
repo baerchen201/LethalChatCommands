@@ -9,9 +9,9 @@ public class Position : Command
     public override string[] Syntax => ["[player]"];
     public override bool Hidden => true;
 
-    public override bool Invoke(string[] args, Dictionary<string, string> kwargs, out string error)
+    public override bool Invoke(string[] args, Dictionary<string, string> kwargs, out string? error)
     {
-        error = null!;
+        error = null;
 
         var player = GameNetworkManager.Instance.localPlayerController;
         if (args.Length > 0)
