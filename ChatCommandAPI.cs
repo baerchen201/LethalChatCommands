@@ -18,7 +18,7 @@ namespace ChatCommandAPI;
 public class ChatCommandAPI : BaseUnityPlugin
 {
     internal static ConfirmationRequest? confirmationRequest;
-    internal static Dictionary<ulong, ConfirmationRequest> confirmationRequests;
+    internal static Dictionary<ulong, ConfirmationRequest> confirmationRequests = [];
 
     internal static ulong? targetClientId;
     internal ConfigEntry<bool> builtInCommands = null!;
