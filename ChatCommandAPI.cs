@@ -342,6 +342,7 @@ public class ChatCommandAPI : BaseUnityPlugin
         UpdateChat();
     }
 
+    [Obsolete]
     public static void Print(string text, (byte, byte, byte) color)
     {
         HUDManager.Instance.ChatMessageHistory.Add(
