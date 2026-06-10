@@ -31,7 +31,11 @@ internal static class HUDManager_SubmitChat_performed
             }
             catch (CommandException e)
             {
-                Chat.PrintError(string.IsNullOrWhiteSpace(e.Message) ? $"An unspecified error occurred while executing command '{name}'" : $"An error occurred while executing command '{name}': {e.Message.Trim()}");
+                Chat.PrintError(
+                    string.IsNullOrWhiteSpace(e.Message)
+                        ? $"An unspecified error occurred while executing command '{name}'"
+                        : $"An error occurred while executing command '{name}': {e.Message.Trim()}"
+                );
                 ChatCommandAPI.Logger.LogError(e);
             }
             catch (Exception e)

@@ -40,8 +40,9 @@ internal static class HUDManager_AddPlayerChatMessageServerRpc
             {
                 Chat.PrintError(
                     caller,
-                    string.IsNullOrWhiteSpace(e.Message) ? $"An unspecified error occurred while executing command '{name}'" :
-                    $"An error occurred while executing command '{name}': {e.Message.Trim()}"
+                    string.IsNullOrWhiteSpace(e.Message)
+                        ? $"An unspecified error occurred while executing command '{name}'"
+                        : $"An error occurred while executing command '{name}': {e.Message.Trim()}"
                 );
                 ChatCommandAPI.Logger.LogError(e);
             }
