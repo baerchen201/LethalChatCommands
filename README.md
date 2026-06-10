@@ -1,9 +1,12 @@
-## This mod is unfinished.
+## This is a mod for developers
 
-**There may be major breaking changes before the first full release.**
+You probably won't find much on this page as a player.
+
+**Instead, try checking out the page of the mod that brought you here**
 
 If you encounter any issues while playing or creating a mod with this API,
-please [report them on GitHub](https://github.com/baerchen201/LethalChatCommands/issues).
+or you would like to request a new feature,
+please [open an issue on GitHub](https://github.com/baerchen201/LethalChatCommands/issues).
 
 This mod is open-source, you can contribute to it
 by [opening a pull request](https://github.com/baerchen201/LethalChatCommands/pulls)
@@ -15,28 +18,24 @@ by [opening a pull request](https://github.com/baerchen201/LethalChatCommands/pu
 Simply run `dotnet add package baer1.ChatCommandAPI` or add the following line to your csproj file:
 
 ```msbuild
-<PackageReference Include="baer1.ChatCommandAPI" Version="0.2.*"/>
+<PackageReference Include="baer1.ChatCommandAPI" Version="*"/>
 ```
 
-Additionally, you should reference this mod in both your main plugin class and your manifest.json \(replace `<VERSION>`
-with the actual version you are using\):
+Additionally, you should reference this mod in both your main plugin class and your `manifest.json`:
 
 ```csharp
-...
 [BepInPlugin(MyPluginInfo.PLUGIN_GUID, MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
-[BepInDependency("baer1.ChatCommandAPI", BepInDependency.DependencyFlags.HardDependency)]
-public class ExampleMod : BaseUnityPlugin
-...
+[BepInDependency(ChatCommandAPI.MyPluginInfo.PLUGIN_GUID)]
+public class ExampleMod : BaseUnityPlugin;
 ```
 
 ```json
-...
-"dependencies": [
-"BepInEx-BepInExPack-5.4.2100",
-"baer1-ChatCommandAPI-<VERSION>",
-...
-]
-...
+{
+  "dependencies": [
+    "BepInEx-BepInExPack-5.4.2305",
+    "baer1-ChatCommandAPI-1.0.0"
+  ]
+}
 ```
 
 ### 2. Create Command Subclass
@@ -52,18 +51,16 @@ This mod is case-insensitive \(`/eXaMpLeCoMmAnD` is valid\)
 Example:
 
 ```csharp
-using System.Collections.Generic;
 using ChatCommandAPI;
 
 namespace ExampleMod;
 
 public class ExampleCommand : Command
 {
-    public override bool Invoke(string[] args, Dictionary<string, string> kwargs, out string? error)
+    public override void Invoke(string args)
     {
-        error = null; // No error message
         // Put your code here
-        return true;
+        return;
     }
 }
 ```
@@ -71,9 +68,13 @@ public class ExampleCommand : Command
 ### 3. Instantiate the Subclass _once_
 
 ```csharp
+using BepInEx;
+
 namespace ExampleMod;
 
-public class ChatCommandAPI : BaseUnityPlugin
+[BepInPlugin(MyPluginInfo.PLUGIN_GUID, MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
+[BepInDependency(ChatCommandAPI.MyPluginInfo.PLUGIN_GUID)]
+public class ExampleMod : BaseUnityPlugin
 {
     private void Awake()
     {
@@ -94,33 +95,32 @@ in [Step 2](#2-create-command-subclass)
 You can overwrite several properties of the `Command` class to customize your command:
 
 ```csharp
-using System.Collections.Generic;
 using ChatCommandAPI;
+using ChatCommandAPI.Utils;
 
 namespace ExampleMod;
 
 public class ExampleCommand : Command
 {
-    public override string Name => "Example"; // Command name (default: Class name)
-    public override string[] Commands =>
-        ["MyCommand", Name, "ExampleCommand", "Command", "HelloWorld"]; // Aliases (first entry is displayed on help, default: Name.ToLower())
-    public override string Description => "Prints Hello World [amount] times"; // Short description of this command
-    public override string[] Syntax => ["", "[amount]"]; // All valid syntaxes for this command (only for help, not validated)
+    public override string Name => "My command"; // Display name
+    public override string Description => "Prints Hello World [amount] times"; // Short description
+
+    public override string Command => "examplecommand"; // Primary command
+    public override string[] Aliases => ["ex", "example"]; // Aliases (an alias may become the primary to avoid duplicates)
+    public override string[] Syntax => ["[amount]"]; // All valid syntaxes for this command (only for help, not validated)
     public override bool Hidden => false; // Whether to hide this command from the help list (useful for debugging, default: false)
 
-    public override bool Invoke(string[] args, Dictionary<string, string> kwargs, out string? error)
+    public override void Invoke(string args)
     {
-        error = "Invalid argument"; // Set error for return value false
         ushort amount = 1;
         if (args.Length > 0)
-            if (!ushort.TryParse(args[0], out amount))
-                return false; // Return value false: reports error to user
+            if (!ushort.TryParse(args, out amount))
+                throw new InvalidArgumentsException(); // Report "Invalid arguments"
         while (amount > 0)
         {
-            ChatCommandAPI.ChatCommandAPI.Instance.Print("Hello, World!");
+            Chat.Print("Hello, World!");
             amount--;
         }
-        return true; // Return value true: success, doesn't do anything
     }
 }
 ```
@@ -128,9 +128,8 @@ public class ExampleCommand : Command
 The above results in the following being displayed on the help list:
 
 ```
-Example - Prints Hello World [amount] times
-/MyCommand
-/MyCommand [amount]
+My command - Prints Hello World [amount] times
+/examplecommand [amount]
 ```
 
 ### Server commands
@@ -142,38 +141,32 @@ They are very similar to the client commands.
 Example (simple implementation of the ShipLoot mod as a server command):
 
 ```csharp
-using System.Collections.Generic;
 using System.Linq;
 using GameNetcodeStuff;
 using UnityEngine;
+using ChatCommandAPI;
+using ChatCommandAPI.Utils;
 
 namespace ExampleMod;
 
 public class ShipLoot : ServerCommand
 {
-    public override string Description => "Displays the value of all loot on the ship"; // Command description (for !help)
+    public override string Description => "Displays the value of all loot on the ship";
 
-    public override bool Invoke(
-        ref PlayerControllerB? caller, // Player that sent the command (can be spoofed, this may be fixed in the future)
-        string[] args,
-        Dictionary<string, string> kwargs,
-        out string? error
+    public override void Invoke(
+        PlayerControllerB caller, // Player that sent the command
+        string args
     )
     {
-        error = "caller is null"; // error message is not reported to anyone, but it is logged
-        if (caller == null) // We need a player to respond to
-            return false;
-
-        error = "Ship not found"; // We need the ship to calculate the value of the loot on it
+        // We need the ship to calculate the value of the loot on it
         var ship = GameObject.Find("/Environment/HangarShip");
         if (ship == null)
-            return false;
+            throw new CommandException("Ship not found"); // Report "Ship not found"
 
-        ChatCommandAPI.Print(
-            caller, // Only prints text to this player
+        Chat.Print(
+            caller, // only prints text to this player
             $"Ship: {ItemValue(ship)}"
         );
-        return true;
     }
 
     // returns value of loot on ship
@@ -189,7 +182,7 @@ public class ShipLoot : ServerCommand
 If you are creating a command that is supposed to act as a toggle (on or off), you can use the `ToggleCommand` class to
 make this easier.
 
-You can override the `Value` property to access it externally or in harmony patches:
+You can use the `CurrentValue` property to access it externally or in harmony patches:
 
 ```csharp
 using GameNetcodeStuff;
@@ -198,148 +191,128 @@ using ChatCommandAPI;
 
 namespace ExampleMod;
 
-public class ExampleToggleCommand : ToggleCommand
+public class ExampleDisableJump : ToggleCommand
 {
-    public override string Name => "BlockJump"; // Command name
-    public override string ToggleDescription => "Blocks jump inputs"; // Use ToggleDescription instead of Description
-    public override string EnabledString => "blocked"; // String to use when Value=false
-    public override string DisabledString => "unblocked"; // String to use when Value=true
+    public override string Name => "Disable Jump";
+    public override string Description => "Disables your jump key";
+    public override string Command => "disablejump";
 
-    public override void PrintValue() => ChatCommandAPI.Print($"Jump inputs {ValueString}"); // Called after value is updated, for user feedback
-
-    public override bool Value // Redirect reads and writes to static property
+    public override bool CurrentValue
     {
-        get => BlockJump;
-        set => BlockJump = value;
+        get => DisableJump;
+        set => DisableJump = value;
     }
-    public static bool BlockJump { get; internal set; } // Static property for external access
+
+    internal static bool DisableJump;
 
     [HarmonyPatch(typeof(PlayerControllerB), nameof(PlayerControllerB.Jump_performed))]
-    internal class Patch
+    private static class PlayerControllerB_Jump_performed
     {
-        private static bool Prefix() => !BlockJump; // Block jump
+        private static bool Prefix()
+        {
+            return !DisableJump;
+        }
+    }
+}
+```
+
+### Argument parsing
+
+If you need multiple arguments, you should use the `Args.Parse` function:
+
+```csharp
+using ChatCommandAPI;
+using ChatCommandAPI.Utils;
+
+namespace ExampleMod;
+
+public class ExampleAdd : Command
+{
+    public override string Name => "Add";
+    public override string Description => "Adds numbers";
+    public override string[] Syntax => ["[number] ..."];
+
+    public override void Invoke(string args)
+    {
+        var _args = Args.Parse(args);
+        var result = 0;
+        foreach (var arg in _args)
+        {
+            if (!int.TryParse(arg, out var i))
+                throw new InvalidArgumentsException();
+            result += i;
+        }
+        Chat.Print(result.ToString());
     }
 }
 ```
 
 ### Player arguments
 
-If you want to allow a player name as an argument, you should use the `Utils.GetPlayer` function:
+If you want to allow a player name as an argument, you should use the `Player.TryGetPlayer` function:
 
 ```csharp
-using System.Collections.Generic;
 using ChatCommandAPI;
-using GameNetcodeStuff;
+using ChatCommandAPI.Utils;
 
 namespace ExampleMod;
 
 public class ExamplePlayerCommand : Command
 {
-    public override string Name => "IsPlayerDead"; // Command name
-    public override string Description => "Shows if a player is dead"; // Command description
-    public override string[] Syntax => ["[player]"];
+    public override string Name => "IsPlayerDead";
+    public override string Description => "Shows if a player is dead";
+    public override string[] Syntax => ["<player>"];
 
-    public override bool Invoke(string[] args, Dictionary<string, string> kwargs, out string? error)
+    public override void Invoke(string args)
     {
-        error = null; // Don't set error message like "Player not found", this error is set by the GetPlayer function automatically
-        PlayerControllerB player = GameNetworkManager.Instance.localPlayerController;
-        if (args.Length > 0)
-            if (!Utils.GetPlayer(args[0], out error, out player))
-                return false; // Player not found, report error to user
-        ChatCommandAPI.ChatCommandAPI.Print(
-            player.isPlayerDead
-                ? $"Player {player.playerUsername} is dead."
-                : $"Player {player.playerUsername} is not dead."
-        );
-        return true; // Report success
+        if (Player.TryGetPlayer(args, out var player))
+            Chat.Print(
+                player.isPlayerDead
+                    ? $"Player {player.PlayerString()} is dead."
+                    : $"Player {player.PlayerString()} is not dead."
+            );
+        else
+            throw new Player.UnknownPlayerException(args); // Report "Unknown player '...'"
     }
 }
 ```
 
 ### Position arguments
 
-If you want to allow a position coordinates as an argument, you should use the `Utils.ParsePosition` function:
+If you want to allow a position coordinates as an argument, you should use the `Pos.TryParse` function:
 
 ```csharp
 using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Globalization;
+using GameNetcodeStuff;
 using UnityEngine;
-using Object = UnityEngine.Object;
+using ChatCommandAPI;
+using ChatCommandAPI.Utils;
 
 namespace ExampleMod;
 
-public class Teleport : Command
+public class ExampleTeleport : Command
 {
-    public override string[] Commands => ["tp", Name];
-    public override string Description =>
-        "Teleports you to the specified coordinates\n"
-        + "<color=#ffff00>Can only be used in singleplayer</color>"; // Yellow warning about only usable in singleplayer
+    public override string Name => "Teleport";
+    public override string Description => "Teleports you to the given position";
+    public override string Command => "tp";
+    public override string[] Aliases => [Name.ToLowerInvariant()];
+    public override string[] Syntax => ["<x> <y> <z>"];
 
-    public override string[] Syntax => ["<x> <y> <z>", "<x,y,z>"]; // Simple syntax for position
-
-    public override bool Invoke(string[] args, Dictionary<string, string> kwargs, out string? error)
+    public override void Invoke(string args)
     {
-        // Only allow this command when you are the only player (and host) in the game, to prevent cheating in multiplayer
-        error = "You can only teleport in singleplayer";
-        if (
-            StartOfRound.Instance.allPlayerScripts.Count(Utils.IsPlayerControlled) > 1
-            || !GameNetworkManager.Instance.localPlayerController.isHostPlayerObject
-        )
-            return false;
-
-        error = "Invalid coordinates";
-        Vector3 position = GameNetworkManager.Instance.localPlayerController.transform.position; // Origin for relative and local coordinates
-        Vector3 newPosition; // Initialize new position variable
-        switch (args.Length)
-        {
-            case 1: // If only one argument, it should be the comma notation (x,y,z)
-                if ( // If the position input is invalid, ...
-                    !Utils.ParsePosition(
-                        position,
-                        GameNetworkManager.Instance.localPlayerController.transform.rotation, // Player rotation for local coordinates
-                        args[0],
-                        out newPosition // Automatically saves position to the correct variable
-                    )
-                )
-                    return false; // ... return error
-                break;
-
-            case 3: // If three arguments, it should be the space notation (x y z)
-                if ( // If the position input is invalid, ...
-                    !Utils.ParsePosition(
-                        position,
-                        GameNetworkManager.Instance.localPlayerController.transform.rotation, // Player rotation for local coordinates
-                        args[0],
-                        args[1],
-                        args[2],
-                        out newPosition // Automatically saves position to the correct variable
-                    )
-                )
-                    return false; // ... return error
-                break;
-
-            default: // If not 1 or 3 arguments, position is invalid
-                error = "Invalid arguments";
-                return false;
-        }
-
-        GameNetworkManager.Instance.localPlayerController.TeleportPlayer(newPosition); // Teleport player
-        GameNetworkManager.Instance.localPlayerController.isInsideFactory = IsInsideFactory( // Fix lighting
-            position
-        );
-        ChatCommandAPI.Print(
-            $"Teleported to {newPosition} (distance:{Math.Round(Vector3.Distance(position, newPosition), 2)})"
-        );
-        return true;
+        var localPlayer = StartOfRound.Instance.localPlayerController;
+        if (!Pos.TryParse(args, out var position, localPlayer))
+            throw new InvalidArgumentsException();
+        Teleport(localPlayer, position);
     }
 
-    // Checks if position is inside the facility (for lighting)
-    private static bool IsInsideFactory(Vector3 position)
+    public static void Teleport(PlayerControllerB localPlayer, Vector3 position)
     {
-        return Object
-            .FindObjectsOfType<OutOfBoundsTrigger>()
-            .Any(i => position.y < i.gameObject.transform.position.y);
+        Chat.Print(
+            $"Teleported {Math.Round(Vector3.Distance(localPlayer.transform.position, position), 2).ToString(CultureInfo.InvariantCulture)}m"
+        );
+        localPlayer.TeleportPlayer(position);
     }
 }
 ```

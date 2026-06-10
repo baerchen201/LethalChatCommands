@@ -1,48 +1,35 @@
-using System.Collections.Generic;
+using ChatCommandAPI.Utils;
 
 namespace ChatCommandAPI;
 
 public abstract class ToggleCommand : Command
 {
-    public virtual string? ToggleDescription => null;
+    public sealed override string[] Syntax => ["{ true | false }"];
 
-    public sealed override string Description =>
-        ToggleDescription == null ? ValueString : $"{ToggleDescription} - {ValueString}";
+    /// <summary>
+    ///     The current value of the command
+    /// </summary>
+    /// <remarks>Use override to point this to a static variable (with your preferred default value)</remarks>
+    public virtual bool CurrentValue { get; set; }
 
-    public sealed override string[] Syntax => ["", "{ on | off }"];
-
-    public virtual string EnabledString => "enabled";
-    public virtual string DisabledString => "disabled";
-
-    public virtual bool Value { get; set; }
-    public virtual string ValueString => Value ? EnabledString : DisabledString;
-
-    public virtual void PrintValue()
+    public sealed override void Invoke(string args)
     {
-        ChatCommandAPI.Print($"{Name} {ValueString}");
+        bool result;
+        if (string.IsNullOrWhiteSpace(args))
+            result = !CurrentValue;
+        else if (!bool.TryParse(args, out result))
+            throw new InvalidArgumentsException();
+        var oldValue = CurrentValue;
+        CurrentValue = result;
+        Changed(oldValue);
     }
 
-    public override bool Invoke(string[] args, Dictionary<string, string> kwargs, out string error)
+    /// <summary>
+    /// The callback when the user changes the value
+    /// </summary>
+    /// <param name="oldValue">The value before the change</param>
+    protected virtual void Changed(bool oldValue)
     {
-        error = "Invalid argument";
-        if (args.Length == 0)
-            Value = !Value;
-        else
-            switch (args[0])
-            {
-                case "on":
-                case "enable":
-                    Value = true;
-                    break;
-                case "off":
-                case "disable":
-                    Value = false;
-                    break;
-                default:
-                    return false;
-            }
-
-        PrintValue();
-        return true;
+        Chat.Print($"{Name} is now {CurrentValue}");
     }
 }

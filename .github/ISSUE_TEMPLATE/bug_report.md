@@ -1,33 +1,35 @@
 ---
 name: Bug report
-about: Report an issue with this mod
-title: ""
-labels: bug
-assignees: ""
+about: I am a player and experienced an issue with this mod (NOT a mod using the API)
+title: ''
+labels: bug, player
+assignees: baerchen201
+
 ---
 
 **Describe the bug**
-A clear and concise description of what the bug is.
+A clear description of what the bug is.
 
 **To Reproduce**
 Steps to reproduce the behavior:
-
-1. Set value '....'
-2. Call function '.....'
+1. Go to '...'
+2. Type '....'
 3. Do '....'
 4. See error
 
 **Expected behavior**
-A clear and concise description of what you expected to happen.
+A clear description of what you expected to happen.
 
-**Example code**
-If applicable, add a short code snippet to help explain your problem.
+**Screenshots**
+If applicable, add screenshots to help explain your problem.
 
 **Desktop (please complete the following information):**
-
-- OS or Compatibility Layer (if applicable): [e.g. Windows 10]
-- Game version [e.g. v69]
-- Mod Version [e.g. 0.1.1]
+ - Game Version (check the title screen) [e.g. v81]
+ - Mod Version (check your mod manager) [e.g. 1.0.0]
+ - OS: [e.g. Windows]
 
 **Additional context**
-Add any other context about the issue here.
+Add any other context about the problem here.
+
+_Please attach your game log below. You can also drag-and-drop it into this tab._
+_You can find it in your profile folder under `BepInEx/LogOutput.log`._

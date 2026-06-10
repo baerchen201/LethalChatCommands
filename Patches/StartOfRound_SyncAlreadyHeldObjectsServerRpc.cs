@@ -1,8 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Emit;
-using BepInEx;
+using ChatCommandAPI.Utils;
 using HarmonyLib;
+using LethalModUtils;
 using UnityEngine;
 
 namespace ChatCommandAPI.Patches;
@@ -16,7 +17,6 @@ internal static class StartOfRound_SyncAlreadyHeldObjectsServerRpc
     {
         return new CodeMatcher(instructions)
             .MatchForward(
-                false,
                 new CodeMatch(
                     OpCodes.Call,
                     AccessTools.Method(typeof(Debug), nameof(Debug.Log), [typeof(string)])
@@ -32,19 +32,14 @@ internal static class StartOfRound_SyncAlreadyHeldObjectsServerRpc
             .InstructionEnumeration();
     }
 
-    internal static void SendWelcomeMessage(ulong clientId)
+    private static void SendWelcomeMessage(ulong clientId)
     {
+        var message = ChatCommandAPI.Instance.ServerWelcomeMessage;
         if (
-            ChatCommandAPI.Instance.ServerWelcomeMessage == null
-            || ChatCommandAPI.Instance.ServerWelcomeMessage.IsNullOrWhiteSpace()
-            || ChatCommandAPI.Instance.serverCommandList.All(i => i.Hidden)
+            string.IsNullOrWhiteSpace(message)
+            || ChatCommandAPI.Instance.ServerCommands.All(kvp => kvp.Value.Hidden)
         )
             return;
-
-        ChatCommandAPI.targetClientId = clientId;
-        HUDManager.Instance.AddTextMessageClientRpc(
-            $"<color=#7069ff>{ChatCommandAPI.Instance.ServerWelcomeMessage}</color>"
-        );
-        ChatCommandAPI.targetClientId = null;
+        Chat.Print(clientId, message, Chat.DEFAULT_CHAT_COLOR);
     }
 }

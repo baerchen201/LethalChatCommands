@@ -1,7 +1,5 @@
-using System.Linq;
-using System.Text;
-using BepInEx;
-using GameNetcodeStuff;
+using System;
+using ChatCommandAPI.Utils;
 using HarmonyLib;
 using Unity.Netcode;
 
@@ -14,64 +12,55 @@ internal static class HUDManager_AddPlayerChatMessageServerRpc
     {
         if (
             __instance.__rpc_exec_stage != NetworkBehaviour.__RpcExecStage.Execute
-            || !(__instance.NetworkManager.IsServer || __instance.NetworkManager.IsHost)
-            || chatMessage.IsNullOrWhiteSpace()
-            || !ChatCommandAPI.Instance.IsServerCommand(chatMessage)
+            || !__instance.IsServer
+            || string.IsNullOrWhiteSpace(chatMessage)
         )
             return true;
 
-        ChatCommandAPI.Logger.LogInfo(
-            $">> Parsing server command by player {playerId}: {chatMessage}"
-        );
-        PlayerControllerB caller = null!;
-        if (playerId >= 0 && playerId < StartOfRound.Instance.allPlayerScripts.Length)
-            caller = StartOfRound.Instance.allPlayerScripts[playerId];
-        ChatCommandAPI.Logger.LogDebug(
-            $"   caller: {(caller == null ? "null" : caller.playerUsername)}"
-        );
-        if (caller == null || !Utils.IsPlayerControlled(caller))
+        if (!Player.TryGetPlayer(playerId, out var caller))
         {
-            ChatCommandAPI.Logger.LogWarning(
-                $"Server command sent by invalid player {playerId}: {chatMessage}"
-            );
+            ChatCommandAPI.Logger.LogWarning($"Chat message sent by invalid player #{playerId}");
             return true;
         }
 
-        if (
-            ChatCommandAPI.Instance.ParseCommand(
-                chatMessage,
-                out var command,
-                out var args,
-                out var kwargs
-            )
-        )
+        if (!ChatCommandAPI.Instance.TryParseServerCommand(chatMessage, out var name, out var args))
+            return true;
+
+        if (ChatCommandAPI.Instance.TryGetServerCommand(name, out var command, out _))
         {
-            var sb = new StringBuilder(
-                $"<< Parsed command: {command}({(caller == null ? "null" : $"#{caller.playerClientId} {caller.playerUsername}")}{(args.Length > 0 || kwargs.Count > 0 ? ", " : "")}"
+            ChatCommandAPI.Logger.LogInfo(
+                $"Executing server command as '{caller.PlayerString()}': {name} ({command.FullName})"
             );
-            if (args.Length > 0)
+            try
             {
-                sb.Append(args.Join());
-                if (kwargs.Count > 0)
-                    sb.Append(", ");
+                command.Invoke(caller, args);
+                ChatCommandAPI.Logger.LogInfo("Command executed successfully");
             }
-
-            sb.Append(kwargs.Select(kvp => $"{kvp.Key}: {kvp.Value}").Join());
-            ChatCommandAPI.Logger.LogInfo(sb + ")");
-
-            if (!ChatCommandAPI.Instance.RunCommand(caller!, command, args, kwargs, out var error))
+            catch (CommandException e)
             {
-                ChatCommandAPI.Logger.LogWarning($"   Error running command: {error ?? "null"}");
-                if (caller != null && error != null)
-                    ChatCommandAPI.PrintCommandError(caller, error);
+                Chat.PrintError(
+                    caller,
+                    string.IsNullOrWhiteSpace(e.Message) ? $"An unspecified error occurred while executing command '{name}'" :
+                    $"An error occurred while executing command '{name}': {e.Message.Trim()}"
+                );
+                ChatCommandAPI.Logger.LogError(e);
+            }
+            catch (Exception e)
+            {
+                Chat.PrintError(
+                    caller,
+                    $"An unexpected {e.GetType().Name} error occurred while executing command '{name}'"
+                );
+                Chat.PrintWarning(
+                    $"An unexpected {e.GetType().Name} error occurred while executing command '{name}' as {caller.PlayerString()}\nCheck the logs for more details"
+                );
+                ChatCommandAPI.Logger.LogError(e);
             }
 
             return false;
         }
 
-        ChatCommandAPI.Logger.LogInfo("<< Invalid command");
-        if (caller != null)
-            ChatCommandAPI.PrintError(caller, (string)"Invalid command");
+        Chat.PrintError(caller, $"Unknown command: '{name}'");
         return false;
     }
 }

@@ -1,16 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Version>0.4.1</Version>
     <AssemblyName>baer1.ChatCommandAPI</AssemblyName>
-    <Product>ChatCommandsAPI</Product>
-    <Title>$(Product)</Title>
-    <Description>A Lethal Company modding API for easy creation of Minecraft-style Chat Commands</Description>
+    <Product>ChatCommandAPI</Product>
+    <Title>ChatCommandAPI</Title>
+    <Version>1.0.0</Version>
     <Authors>baer1</Authors>
+    <Description>A Lethal Company modding API for easy creation of Minecraft-style Chat Commands</Description>
     <PackageTags>lethal company;bepinex</PackageTags>
     <PackageIcon>icon.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
-    <Copyright>Copyright (c) baer1 2025</Copyright>
+    <Copyright>Copyright (c) baer1 2026</Copyright>
     <PackageProjectUrl>https://github.com/baerchen201/LethalChatCommands</PackageProjectUrl>
     <RepositoryUrl>https://github.com/baerchen201/LethalChatCommands.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
@@ -61,6 +61,7 @@
       IncludeAssets="compile"
       PrivateAssets="all"
     />
+    <PackageReference Include="baer1.LethalModUtils" Version="1.*" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework.TrimEnd(`0123456789`))' == 'net'">
     <PackageReference

@@ -1,7 +1,8 @@
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Reflection.Emit;
+using ChatCommandAPI.Utils;
 using HarmonyLib;
+using LethalModUtils;
 using Unity.Netcode;
 
 namespace ChatCommandAPI.Patches;
@@ -15,7 +16,6 @@ internal static class HUDManager_AddTextMessageClientRpc
     {
         return new CodeMatcher(instructions)
             .MatchForward(
-                false,
                 new CodeMatch(
                     OpCodes.Call,
                     AccessTools.Method(
@@ -34,15 +34,10 @@ internal static class HUDManager_AddTextMessageClientRpc
             .InstructionEnumeration();
     }
 
-    [SuppressMessage("Method Declaration", "Harmony003:Harmony non-ref patch parameters modified")]
-    public static ClientRpcParams RedirectMessageToClient(ClientRpcParams clientRpcParams)
+    private static ClientRpcParams RedirectMessageToClient(ClientRpcParams clientRpcParams)
     {
-        if (ChatCommandAPI.targetClientId == null)
-            return clientRpcParams;
-
-        return new ClientRpcParams
-        {
-            Send = { TargetClientIds = [ChatCommandAPI.targetClientId.Value] },
-        };
+        return Chat.targetClientId == null
+            ? clientRpcParams
+            : new ClientRpcParams { Send = { TargetClientIds = [Chat.targetClientId.Value] } };
     }
 }
