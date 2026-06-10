@@ -8,6 +8,7 @@ using UnityEngine.InputSystem;
 namespace ChatCommandAPI.Patches;
 
 [HarmonyPatch(typeof(HUDManager), nameof(HUDManager.SubmitChat_performed))]
+[HarmonyPriority(int.MaxValue)]
 internal static class HUDManager_SubmitChat_performed
 {
     private static bool Prefix(ref HUDManager __instance, ref InputAction.CallbackContext context)
