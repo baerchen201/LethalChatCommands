@@ -40,6 +40,17 @@ public abstract class LegacyToggleCommand : ToggleCommand
     public virtual string DisabledString => "disabled";
     public virtual string ValueString => Value ? EnabledString : DisabledString;
 
+    public virtual string? ToggleDescription => null;
+
+    public sealed override string Description
+    {
+        get
+        {
+            var desc = ToggleDescription;
+            return string.IsNullOrWhiteSpace(desc) ? ValueString : $"{desc} - {ValueString}";
+        }
+    }
+
     public virtual void PrintValue()
     {
         Chat.Print($"{Name} {ValueString}");
