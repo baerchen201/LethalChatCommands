@@ -3,7 +3,7 @@
     <AssemblyName>baer1.ChatCommandAPI</AssemblyName>
     <Product>ChatCommandAPI</Product>
     <Title>ChatCommandAPI</Title>
-    <Version>1.1.0</Version>
+    <Version>1.1.1</Version>
     <Authors>baer1</Authors>
     <Description>A Lethal Company modding API for easy creation of Minecraft-style Chat Commands</Description>
     <PackageTags>lethal company;bepinex</PackageTags>
