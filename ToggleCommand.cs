@@ -25,7 +25,7 @@ public abstract class ToggleCommand : Command
     }
 
     /// <summary>
-    /// The callback when the user changes the value
+    ///     The callback when the user changes the value
     /// </summary>
     /// <param name="oldValue">The value before the change</param>
     protected virtual void Changed(bool oldValue)

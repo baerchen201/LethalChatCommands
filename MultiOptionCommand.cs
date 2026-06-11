@@ -51,7 +51,7 @@ public abstract class MultiOptionCommand<T> : Command
     }
 
     /// <summary>
-    /// The callback when the user changes the value
+    ///     The callback when the user changes the value
     /// </summary>
     /// <param name="oldValue">The value before the change</param>
     protected virtual void Changed(T oldValue)
