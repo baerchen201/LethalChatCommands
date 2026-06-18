@@ -209,7 +209,7 @@ public class ChatCommandAPI : BaseUnityPlugin
         args = null!;
         var match = Regex.Match(
             cmdline,
-            $"{Regex.Escape(prefix.ToString())}({COMMAND_NAME_REGEX})(?: (.*))?"
+            $"^{Regex.Escape(prefix.ToString())}({COMMAND_NAME_REGEX})(?: (.*))?$"
         );
         if (!match.Success)
             return false;
