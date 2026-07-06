@@ -16,6 +16,7 @@ namespace ChatCommandAPI;
 
 [BepInPlugin(MyPluginInfo.PLUGIN_GUID, MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
 [BepInDependency(LethalModUtils.MyPluginInfo.PLUGIN_GUID)]
+[BepInDependency("taffyko.NiceChat", BepInDependency.DependencyFlags.SoftDependency)]
 public class ChatCommandAPI : BaseUnityPlugin
 {
     internal const string COMMAND_NAME_REGEX = @"\S+";
