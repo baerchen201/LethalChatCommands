@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using GameNetcodeStuff;
+using Unity.Netcode;
 
 namespace ChatCommandAPI.Utils;
 
@@ -30,9 +31,13 @@ public static class Chat
     {
         // no thread safety because fuck you
         Chat.targetClientId = targetClientId;
-        HUDManager.Instance.AddTextMessageClientRpc(
+        var hudManager = HUDManager.Instance;
+        var rpcExecStage = hudManager.__rpc_exec_stage;
+        hudManager.__rpc_exec_stage = NetworkBehaviour.__RpcExecStage.Send;
+        hudManager.AddTextMessageClientRpc(
             $"<color=#{color.R:X2}{color.G:X2}{color.B:X2}{color.A:X2}>{Clean(message)}</color>"
         );
+        hudManager.__rpc_exec_stage = rpcExecStage;
         Chat.targetClientId = null;
     }
 
