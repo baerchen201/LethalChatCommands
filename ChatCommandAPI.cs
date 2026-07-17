@@ -105,6 +105,7 @@ public class ChatCommandAPI : BaseUnityPlugin
         verifyConfigValues(null!, null!);
 
         _ = new Help();
+        _ = new Clear();
         _ = new ServerCommands.Help();
 
 #if DEBUG
