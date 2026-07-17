@@ -175,4 +175,15 @@ public static class Pos
             player.gameplayCamera.transform.rotation
         );
     }
+
+    public static string PositionString(this Vector3 position)
+    {
+        return $"({position.x}, {position.y}, {position.z})";
+    }
+
+    /// <summary>
+    ///     An exception for when a position is out of an expected range.
+    /// </summary>
+    public sealed class InvalidPositionException(Vector3 position)
+        : CommandException($"Invalid position {position.PositionString()}");
 }

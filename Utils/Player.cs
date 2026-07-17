@@ -170,4 +170,16 @@ public static class Player
 
     public sealed class UnknownPlayerException(string identifier)
         : CommandException($"Unknown player '{identifier}'");
+
+    /// <summary>
+    ///     An exception for when a command expects a player to be alive, but they aren't.
+    /// </summary>
+    public sealed class PlayerIsDeadException(PlayerControllerB player)
+        : CommandException($"Player '{player.PlayerString()}' is dead");
+
+    /// <summary>
+    ///     An exception for when a command expects a player to be dead, but they aren't.
+    /// </summary>
+    public sealed class PlayerIsNotDeadException(PlayerControllerB player)
+        : CommandException($"Player '{player.PlayerString()}' is not dead");
 }
