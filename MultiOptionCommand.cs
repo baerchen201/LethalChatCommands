@@ -36,7 +36,7 @@ public abstract class MultiOptionCommand<T> : Command
     {
         if (string.IsNullOrWhiteSpace(args))
         {
-            var values = Enum.GetValues(typeof(T));
+            var values = Enum.GetNames(typeof(T));
             Chat.Print(
                 $"{typeof(T).Name} values:\n<indent=15%>{string.Join('\n', values)}</indent>\n{Name} value: <color=#{(Enum.IsDefined(typeof(T), CurrentValue) ? "00ffff" : "ff0000")}>{CurrentValue}</color>"
             );
