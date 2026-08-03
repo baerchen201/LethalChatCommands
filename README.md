@@ -33,7 +33,7 @@ public class ExampleMod : BaseUnityPlugin;
 {
   "dependencies": [
     "BepInEx-BepInExPack-5.4.2305",
-    "baer1-ChatCommandAPI-1.2.0"
+    "baer1-ChatCommandAPI-1.2.1"
   ]
 }
 ```
