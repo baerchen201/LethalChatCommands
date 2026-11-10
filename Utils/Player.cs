@@ -156,9 +156,32 @@ public static class Player
         };
     }
 
+    /// <summary>
+    ///     ToString but better
+    /// </summary>
+    /// <returns>"#{id} {username}"</returns>
     public static string PlayerString(this PlayerControllerB player)
     {
         return $"#{player.playerClientId} {player.playerUsername}";
+    }
+
+    /// <summary>
+    ///     Returns the chat string representation of the player (the ingame chat replaces this with their name)
+    /// </summary>
+    /// <returns>"[playerNum{id}]"</returns>
+    public static string PlayerName(this PlayerControllerB player)
+    {
+        return PlayerName(player.playerClientId);
+    }
+
+    public static string PlayerName(int playerClientId)
+    {
+        return $"[playerNum{playerClientId}]";
+    }
+
+    public static string PlayerName(ulong playerClientId)
+    {
+        return $"[playerNum{playerClientId}]";
     }
 
     public static bool IsPlayerControlled(this PlayerControllerB player)
