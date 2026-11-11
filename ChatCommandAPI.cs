@@ -6,6 +6,7 @@ using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using ChatCommandAPI.Commands;
+using ChatCommandAPI.Patches;
 using ChatCommandAPI.ServerCommands;
 using ChatCommandAPI.Utils;
 using HarmonyLib;
@@ -37,7 +38,7 @@ public class ChatCommandAPI : BaseUnityPlugin
     public System.Drawing.Color DefaultMessageColor => defaultMessageColor.Value.ToSystem();
     public char CommandPrefix => commandPrefix.Value[0];
     public bool CompatibilityModeEnabled => compatibilityModeEnabled.Value;
-    public bool ServerCommandsEnabled => serverCommandsEnabled.Value;
+    public bool ServerCommandsEnabled { get; private set; }
     public char ServerCommandPrefix => serverCommandPrefix.Value[0];
 
     public string ServerWelcomeMessage =>
@@ -82,12 +83,14 @@ public class ChatCommandAPI : BaseUnityPlugin
             "Allows non-API chat commands to run (may cause the command you run to be sent in chat)"
         );
 
-        serverCommandsEnabled = Config.Bind(
-            SECTION_SERVER,
-            nameof(ServerCommandsEnabled),
-            false,
-            "Enables or disables server commands"
-        );
+        ServerCommandsEnabled = (
+            serverCommandsEnabled = Config.Bind(
+                SECTION_SERVER,
+                nameof(ServerCommandsEnabled),
+                false,
+                "Enables or disables server commands (requires restart)"
+            )
+        ).Value;
         serverCommandPrefix = Config.Bind(
             SECTION_SERVER,
             nameof(ServerCommandPrefix),
@@ -135,7 +138,11 @@ public class ChatCommandAPI : BaseUnityPlugin
         {
             Harmony ??= new Harmony(MyPluginInfo.PLUGIN_GUID);
             Logger.LogDebug("Patching...");
-            Harmony.PatchAll();
+            Harmony.PatchAll(typeof(BasePatches));
+            if (ServerCommandsEnabled)
+                Harmony.PatchAll(typeof(ServerCommandPatches));
+            else
+                Logger.LogWarning("Server commands are disabled at startup");
             Logger.LogDebug("Finished patching!");
         }
 

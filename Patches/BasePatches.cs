@@ -1,17 +1,64 @@
 using System;
+using System.Collections.Generic;
+using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using ChatCommandAPI.Utils;
+using GameNetcodeStuff;
 using HarmonyLib;
+using LethalModUtils;
+using Unity.Netcode;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 namespace ChatCommandAPI.Patches;
 
-[HarmonyPatch(typeof(HUDManager), nameof(HUDManager.SubmitChat_performed))]
-[HarmonyPriority(int.MaxValue)]
-internal static class HUDManager_SubmitChat_performed
+internal static class BasePatches
 {
-    private static bool Prefix(ref HUDManager __instance, ref InputAction.CallbackContext context)
+    [HarmonyPatch(typeof(HUDManager), nameof(HUDManager.AddTextMessageClientRpc))]
+    [HarmonyTranspiler]
+    private static IEnumerable<CodeInstruction> HUDManager_AddTextMessageClientRpc(
+        IEnumerable<CodeInstruction> instructions
+    )
+    {
+        return new CodeMatcher(instructions)
+            .MatchForward(
+                new CodeMatch(
+                    OpCodes.Call,
+                    AccessTools.Method(
+                        typeof(NetworkBehaviour),
+                        nameof(NetworkBehaviour.__endSendClientRpc)
+                    )
+                )
+            )
+            .Advance(-1)
+            .Insert(CodeInstruction.Call(typeof(BasePatches), nameof(RedirectMessageToClient)))
+            .InstructionEnumeration();
+    }
+
+    private static ClientRpcParams RedirectMessageToClient(ClientRpcParams clientRpcParams)
+    {
+        return Chat.targetClientId == null
+            ? clientRpcParams
+            : new ClientRpcParams { Send = { TargetClientIds = [Chat.targetClientId.Value] } };
+    }
+
+    [HarmonyPatch(typeof(PlayerControllerB), nameof(PlayerControllerB.Update))]
+    [HarmonyPostfix]
+    [HarmonyPriority(Priority.Last)]
+    private static void PlayerControllerB_Update(ref PlayerControllerB __instance) // it pains me to run this every frame but NiceChat does it so i really have no choice here
+    {
+        var chatTextField = HUDManager.Instance.chatTextField;
+        if (chatTextField.text.StartsWith(ChatCommandAPI.Instance.CommandPrefix))
+            chatTextField.characterLimit = 0;
+    }
+
+    [HarmonyPatch(typeof(HUDManager), nameof(HUDManager.SubmitChat_performed))]
+    [HarmonyPrefix]
+    [HarmonyPriority(Priority.First)]
+    private static bool HUDManager_SubmitChat_performed(
+        ref HUDManager __instance,
+        ref InputAction.CallbackContext context
+    )
     {
         var text = __instance.chatTextField.text;
         if (!context.performed || string.IsNullOrWhiteSpace(text))
